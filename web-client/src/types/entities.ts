@@ -1,5 +1,4 @@
 
-
 export type Room = {
   id: string;
   ownerId?: string;
@@ -15,6 +14,33 @@ export type Room = {
   extraPlayersCount?: number; 
 }
 
+// join request 
+export type Request = {
+  id?: string;
+  petitionNumber?: string;
+  timeAgo?: string;
+  expiresIn?: string;
+  playerName?: string;
+  playerLevel?: number;
+  playerRank?: 'BEGINNER' | 'INTERMEDIATE' | "PROFESSIONAL" |"EXPERT"|"GENIUS" | string;
+  stats?: PetitionStats;
+  targetRoom?: string;
+  hostBypass?: 'YES' | 'NO';
+  status: 'pending'|'resolved' | 'error' | 'rejected';
+}
+
+interface PetitionStats {
+  wins: number;
+  accuracy: number;
+  ping: number;
+}
+
+
+interface PetitionStats {
+  wins: number;
+  accuracy: number;
+  ping: number;
+}
 
 export type  PlayerAvatar= {
   src: string;
@@ -22,6 +48,11 @@ export type  PlayerAvatar= {
   bgClass: string;
 }
 
+
+export type Requestor = {
+  id?: number;
+  name: string;
+  }
 
 export type RoomCreateType = {
   name: string;

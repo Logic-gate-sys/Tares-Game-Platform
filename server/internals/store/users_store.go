@@ -8,10 +8,10 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
 	"github.com/logic-gate-sys/tares-cli/internals/tokens"
 	"golang.org/x/crypto/bcrypt"
 )
-
 
 type Password struct {
 	PlainText *string `json:"plain_text"`
@@ -42,14 +42,24 @@ func (ps *Password) Matches(plaintext string) (bool, error) {
 	return true, nil
 }
 
+type PlayerLevel string
+const (
+	Beginner     PlayerLevel = "beginner"
+	Intermediate PlayerLevel = "intermediate"
+	Pro          PlayerLevel = "professional"
+	Expert       PlayerLevel = "expert"
+	Genius       PlayerLevel = "genius"
+)
+
 type User struct {
 	Id          int       `json:"id"`
 	Email       string    `json:"email"`
 	Username    string    `json:"username"`
 	Password    Password  `json:"password"`
 	PlayerLevel string    `json:"p_level"`
+	Rank        string    `json:"rank"`
 	Bio         string    `json:"bio"`
-	Avatar   string       `json:"avatar"`
+	Avatar      string    `json:"avatar"`
 	TotalScore  int       `json:"total_score"`
 	CreatedAt   time.Time `json:"created_at"`
 }
@@ -113,6 +123,7 @@ type UserStore interface {
 	GetUser(ctx context.Context, email string) (*User, *tokens.Token, error)
 	VerifyToken(ctx context.Context, urlStr string) (bool, error)
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
+	GetUserDetails(ctx context.Context, userID int) (*User, error)
 }
 
 // constructor
@@ -143,8 +154,8 @@ func (ps *PostresUserStore) CreateUser(ctx context.Context, user *User) (*User, 
 func (ps *PostresUserStore) GetUser(ctx context.Context, email string) (*User, *tokens.Token, error) {
 	user := &User{}
 	token := &tokens.Token{}
-	query := `SELECT 
-								u.email,u.username,u.p_level,u.total_score, 
+	query := `SELECT
+								u.email,u.username,u.p_level,u.total_score,
 								t.token_hash, t.expiry, t.scope
 	          FROM users u
 					  INNER JOIN tokens t ON u.id = t.user_id
@@ -179,39 +190,69 @@ func (ps *PostresUserStore) VerifyToken(ctx context.Context, urlStr string) (*Us
 	}
 	hashedToken := sha256.Sum256([]byte(decodedStr))
 	hash := hashedToken[:]
-	query :=`SELECT t.token_hash, t.expiry, t.scope, u.email,u.username,u.p_level,u.total_score
-	       FROM tokens t
-				 INNER JOIN users u ON u.id = t.user_id
-				 WHERE token_hash = $1 AND expiry > NOW()
+	query := `
+	        SELECT
+	           t.token_hash, t.expiry, t.scope,
+						 u.id,u.email,u.username,u.p_level,u.total_score
+	        FROM tokens t
+				  INNER JOIN users u ON u.id = t.user_id
+				  WHERE token_hash = $1 AND expiry > NOW()
 					`
 	err = ps.db.QueryRowContext(ctx, query, hash).Scan(
 		&token.Hash,
 		&token.Expiry,
 		&token.Scope,
+		&user.Id,
 		&user.Email,
 		&user.Username,
 		&user.PlayerLevel,
 		&user.TotalScore,
 	)
-	
+
 	if err != nil {
 		return nil, nil, err
 	}
 	return &user, &token, nil
 }
 
-func (ps *PostresUserStore) GetUserByEmail(ctx context.Context, email string) (*User, error){
+func (ps *PostresUserStore) GetUserByEmail(ctx context.Context, email string) (*User, error) {
 	user := &User{}
-	query:= `SELECT id, username, password_hash
-	         FROM users 
+	query := `SELECT id, username, password_hash,p_level,bio,total_score,created_at
+	         FROM users
 					 WHERE email = $1`
 
-	err := ps.db.QueryRowContext(ctx, query,email).Scan(
+	err := ps.db.QueryRowContext(ctx, query, email).Scan(
 		&user.Id,
 		&user.Username,
 		&user.Password.Hash,
+		&user.PlayerLevel,
+		&user.Bio,
+		&user.TotalScore,
+		&user.CreatedAt,
 	)
-	if err !=nil{
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (ps *PostresUserStore) GetUserDetails(ctx context.Context, userID int) (*User, error) {
+	user := &User{}
+	query := `SELECT id, username, p_level, bio, avatar_url, total_score, created_at
+	          FROM users
+	          WHERE id = $1`
+
+	err := ps.db.QueryRowContext(ctx, query, userID).Scan(
+		&user.Id,
+		&user.Username,
+		&user.PlayerLevel,
+		&user.Bio,
+		&user.Avatar,
+		&user.TotalScore,
+		&user.CreatedAt,
+	)
+	if err != nil {
 		return nil, err
 	}
 

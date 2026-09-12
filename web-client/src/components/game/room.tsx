@@ -3,16 +3,16 @@ export type RoomData = {
   id: string;
   name: string;
   ownerId?: string;
-  capacity: number; // max players 
-  icon: string; // icon url return from server 
+  capacity: number; // max players
+  icon: string; // icon url return from server
   iconBgClass: string;
   iconTextColorClass: string;
   players?: number,
   playersText?: string;
   timeLeftText?: string;
-  avatars?: {src: string;alt: string;bgClass: string;}[];
-  extraPlayersCount?: number; 
-  status?:'online'|'offline'|'playing'|'waiting',
+  avatars?: { src: string; alt: string; bgClass: string; }[];
+  extraPlayersCount?: number;
+  status?: 'online' | 'offline' | 'playing' | 'waiting',
 }
 
 export type Props = {
@@ -24,9 +24,12 @@ export type Props = {
   onToggleStatus?: () => void;
 }
 
-export const RoomCard = ({data, playerId,onJoin,onOpenSettings, onOpenDelete, onToggleStatus}: Props) => {
-  const isOwner = playerId === data.ownerId? false: true; 
-  
+export const RoomCard = ({ data, playerId, onJoin, onOpenSettings, onOpenDelete, onToggleStatus }: Props) => {
+  const isOwner = (playerId == data.ownerId) ? true : false;
+  console.log("playerId: ", playerId);
+  console.log("OwnerId: ", data?.ownerId);
+  console.log("ISOWNER: ", isOwner);
+
   return (
     <div className="bg-paper-white border-4 border-deep-ink p-6 neubrutalism-shadow-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(18,23,33,1)] transition-all group">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -71,7 +74,7 @@ export const RoomCard = ({data, playerId,onJoin,onOpenSettings, onOpenDelete, on
       </div>
 
       {/* Host Terminal Bar */}
-      
+
       {isOwner && (
         <div className="mt-6 pt-4 border-t-4 border-deep-ink flex items-center justify-between bg-surface-container p-3">
           <div className="flex items-center gap-4">
@@ -82,15 +85,14 @@ export const RoomCard = ({data, playerId,onJoin,onOpenSettings, onOpenDelete, on
               <span className="text-xs font-label-bold px-2">STATUS</span>
               <button
                 onClick={onToggleStatus}
-                className={`${
-                  data.status !=="offline" ? 'bg-action-red' : 'bg-deep-ink'
-                } text-paper-white px-3 py-1 border-2 border-deep-ink text-xs font-label-bold active:scale-95 transition-transform`}
+                className={`${data.status !== "offline" ? 'bg-action-red' : 'bg-deep-ink'
+                  } text-paper-white px-3 py-1 border-2 border-deep-ink text-xs font-label-bold active:scale-95 transition-transform`}
               >
-                {data.status==="online" ? 'ONLINE' : 'OFFLINE'}
+                {data.status === "online" ? 'ONLINE' : 'OFFLINE'}
               </button>
             </div>
           </div>
-  
+
           {/* Action Controls */}
           <div className="flex gap-2">
             <button
@@ -106,11 +108,9 @@ export const RoomCard = ({data, playerId,onJoin,onOpenSettings, onOpenDelete, on
               <span className="material-symbols-outlined">close</span>
             </button>
           </div>
-        </div>
-      )
-        
+        </div>)
       }
-     
+
     </div>
   );
 }

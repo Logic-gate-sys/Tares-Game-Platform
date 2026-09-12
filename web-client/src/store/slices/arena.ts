@@ -1,8 +1,10 @@
+import type { Room } from "#types/entities";
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 
 export type GameState = {
-  status: "idle" | "round-started" | "round-playing" | "round-over" | "error";
+  status: "room:out" | "room:in" | "idle" | "round-started" | "round-playing" | "round-over" | "error";
+  room?: Room; // users active room
   roomId: string;   // user's active room
   scores: unknown[]; // ingame scores arranged in order
   players: unknown[];

@@ -1,8 +1,8 @@
 import { type Middleware } from "@reduxjs/toolkit";
-import { addRoom, changeSocketStatus, lobbySlice, removeRoom, setAvailableRooms } from "./slices/lobby-slice"
-import { gameSlice } from "./slices/ingame-slice";
+import { addMessage, addRequest, addRoom, changeSocketStatus, lobbySlice, removeRoom, setAvailableRooms } from "./slices/lobby"
+import { gameSlice } from "./slices/arena";
 import type { ServerMessage } from "#types/messages";
-import type { Room } from "#types/entities";
+import type { Room, Request } from "#types/entities";
 
 
 // socket connection middleware
@@ -35,6 +35,14 @@ export const socketMiddleware = (): Middleware => {
               store.dispatch(addRoom(res.payload.data));
               break;
             }
+
+            // when join request comes in
+            if (res.payload.which === "incoming:join:request") {
+              store.dispatch(addRequest(res.payload.data as Request));
+              store.dispatch(addMessage(res.payload.message))
+              break;
+            }
+            
             if (res.payload.which === "rooms:off-line") {
               store.dispatch(removeRoom(res.payload.data));
               break; 
@@ -49,6 +57,7 @@ export const socketMiddleware = (): Middleware => {
             break;
         }
       });
+      
       // closing socket
       socket.addEventListener("close", () => { store.dispatch(changeSocketStatus('disconnected')) });
     };

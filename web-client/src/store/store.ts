@@ -1,9 +1,9 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { socketMiddleware } from "./middleware";
-import lobbyReducer from "./slices/lobby-slice";
-import gameReduer from './slices/ingame-slice'
+import lobbyReducer from "./slices/lobby";
+import gameReduer from './slices/lobby'
 import { baseApi } from "./services/api-slice";
-import authSlice  from "./slices/auth-slice";
+import authSlice  from "./slices/auth";
 
 
 export const store = configureStore({
@@ -18,4 +18,4 @@ export const store = configureStore({
 
 
 export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch; 
+export type AppDispatch = typeof store.dispatch;

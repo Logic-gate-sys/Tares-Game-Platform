@@ -2,9 +2,9 @@
 2. GameSocket(verifies and connect an authenticated user to lobby socket)
 3. User finds online rooms(game rooms) and requests to join
 4. All members receives the request via server socket
-5. One member resolves request (accept or deny)
+5. One member(owner) resolves request (accept or deny)
 6. User (requester ) receives status of request 
-7. If accepted (requester) enters game arina or else such arena locks to them for the entire game
+7. If accepted (requester) enters game arena or else such arena locks to them for the entire game
 8. If requester joins room:
    - Requestor receives timer(count down) based on when next round starts
    - Receives scramble and can submit answers(once based on scrambled word)
@@ -19,7 +19,7 @@
 1. User connects via wss --> User enters game lobby:
     - Here user can: 
       1. view all available rooms
-      2. request to join a room 
+      2. request to join a room
       3. leave lobby, this closes client's socket 
 2. User finds room they like 
    --> request to join 

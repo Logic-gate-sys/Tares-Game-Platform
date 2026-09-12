@@ -20,8 +20,11 @@ export type AuthResponse = {
   user: {
     id: string;
     email: string;
-    username: string;
-    createdAt: string;
+    username?: string;
+    p_level?: string;
+    bio?: string;
+    total_score?: number; 
+    createdAt: Date; 
   };
 }
 
