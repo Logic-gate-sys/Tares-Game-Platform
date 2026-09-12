@@ -1,14 +1,19 @@
 package events
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+
+	"github.com/logic-gate-sys/tares-cli/internals/store"
+)
 
 type lobbyAction string
 
 const (
 	CreateRoom lobbyAction = "room:create"
-	JoinRoom   lobbyAction = "room:join"
-	LeaveRoom   lobbyAction = "room:leave"
+	LeaveRoom  lobbyAction = "room:leave"
 	UpdateRoom lobbyAction = "room:update"
+	JoinRoom   lobbyAction = "request:room:join"
 )
 
 type GameRoomAction string
@@ -51,12 +56,15 @@ type GameStateBroadcast struct {
 	Message       string         `json:"message"`
 	Data          interface{}    `json:"data"` // any optional data supplied in broadcast
 }
-type Which string 
+type Which string
+
 const (
-	AvailableRooms Which ="available:rooms"
-	NewRoom        Which ="rooms:new"
-	UpdatedRoom    Which ="rooms:update"
+	AvailableRooms      Which = "available:rooms"
+	NewRoom             Which = "rooms:new"
+	UpdatedRoom         Which = "rooms:update"
+	IncomingJoinRequest Which = "incoming:join:request"
 )
+
 type LobbyStateBroadcast struct {
 	Which   Which       `json:"which"`
 	Data    interface{} `json:"data"`
@@ -73,13 +81,34 @@ const (
 )
 
 type message string
+
 const (
-	Ingame  message = "in:game"  
-	Inlobby message = "in:lobby" 
+	Ingame  message = "in:game"
+	Inlobby message = "in:lobby"
 )
 
 // any message from client or server is in this format
 type RawMessage struct {
 	MsgType message         `json:"type"`
 	RawJson json.RawMessage `json:"payload"` // holdes raw json to delay decodeing
+}
+
+// --------- Room join request format ------------------
+type PetitionStats struct {
+	Wins     int     `json:"wins"`
+	Accuracy float64 `json:"accuracy"` // correct words/total words
+	Ping     int     `json:"ping"`     // TODO: how useful should ping be?
+}
+
+type PetitionRequest struct {
+	ID             string            `json:"id,omitempty"`
+	PetitionNumber string            `json:"petitionNumber,omitempty"` // generated on the fly
+	Duration       time.Duration     `json:"duration,omitempty"`
+	PlayerName     string            `json:"playerName,omitempty"`
+	PlayerLevel    store.PlayerLevel `json:"playerLevel,omitempty"`
+	Stats          *PetitionStats    `json:"stats,omitempty"`
+	TargetRoom     string            `json:"targetRoom,omitempty"`
+	HostBypass     string            `json:"hostBypass,omitempty"`
+	Status         string            `json:"status"`
+	CreatedAt      time.Time         `json:"createdAt"` // keep when it's generated and get time ago in frontend
 }

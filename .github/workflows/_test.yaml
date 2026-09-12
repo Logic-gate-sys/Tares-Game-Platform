@@ -1,29 +1,35 @@
-# Reusable build workflow, producess output
-name: Build Tares CLI
-
-on:
-    workflow_call:
-
-permissions:
-    contents: read
+name: Reusable Test Phase
+on: 
+  workflow_call:
+    inputs:
+        run_frontend:
+          required: true
+          type: boolean
+        run_backend:
+          required: true
+          type: boolean
 
 jobs:
-    tests:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+  test-frontend:
+    if: ${{inputs.run_frontend}}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22
+      - run: npm ci
+      - run: npm test
 
-            - name: Setup Go
-              uses: actions/setup-go@v5
-              with:
-                  go-version: "1.26.3"
-
-            - name: Install packages
-              run: go mod download
-
-            - name: Run all tests
-              run: |
-                  make unit-tests
-                  make integration-tests
-                  make ws-tests
+  test-backend:
+    if: ${{inputs.run_backend}}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # setup-go@v5 automatically monitors  go.sum file for caching out-of-the-box.
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.26
+      - run: go mod download
+      # Test with folder structure specify
+      - run: go test -v ./...

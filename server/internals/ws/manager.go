@@ -3,9 +3,13 @@ package ws
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
+	"time"
+
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/logic-gate-sys/tares-cli/internals/events"
 	"github.com/logic-gate-sys/tares-cli/internals/middleware"
@@ -36,38 +40,15 @@ func NewRoomManager() *roomManager {
 	}
 }
 
-// broadcastToLobby is a helper method to send the current room list to everyone in the lobby
-// func (rm *roomManager) broadcastToLobby() {
-// 	var publicRooms []PublicUserRoom
-// 	for _, room := range rm.rooms {
-// 		pbcRoom := NewPublicRoom(room)
-// 		publicRooms = append(publicRooms, pbcRoom)
-// 	}
-
-// 	// Loop through every client waiting in the lobby and push the update
-// 	for client := range rm.lobbyClients {
-// 		// Non-blocking channel send pattern to prevent one slow client from hanging the entire lobby loop
-// 		select {
-// 		case client.inLobbyToClientEvent <- events.LobbyStateBroadcast{
-// 			Data:    publicRooms,
-// 			Message: "Someone create a new room",
-// 		}:
-// 		default:
-// 			// If a client's channel buffer is full, skip them so the loop keeps moving smoothly
-// 			log.Printf("Skipping broadcast for client %s: buffer full", client.name)
-// 		}
-// 	}
-// }
-
 // manages lobby state(joining, leaving, discovering rooms)
 func (rm *roomManager) Run() {
-	//initialise db outside http 
+	//initialise db outside http
 	db, err := store.Open()
 	if err != nil {
 		return
 	}
 	rmStore := store.NewPostgresRoomStore(db)
-	// the loop 
+	// the loop
 	for {
 		select {
 		// when client joins lobby channel
@@ -85,72 +66,120 @@ func (rm *roomManager) Run() {
 				Message: "Current online rooms available",
 			}
 			log.Printf("Client: %s joined lobby", client.name)
-		// when client leaves lobby
+
+		// TODO: Find a way to ensure room owner client is last to leave lobby(
+		// this client need to accepts others into his room/ start , initial game)
 		case client := <-rm.lobbyLeave:
 			delete(rm.lobbyClients, client)
 			close(client.inLobbyToClientEvent)
 			log.Printf("Client: %s left lobby", client.name)
-			
+
 		// if an event is sent to lobby
 		case action := <-rm.lobbyInbound:
 			switch action.Action.Action {
-				case  events.CreateRoom: {
+			case events.CreateRoom:
+				{
 					var payload struct {
 						Name string `json:"name"`
 					}
 					err := json.Unmarshal(action.Action.Value, &payload)
-					// if room id is not valid 
-					if payload.Name ==""{
-						break;
+					// if room id is not valid
+					if payload.Name == "" {
+						break
 					}
-				 ctx := context.Background()
-				 room,err := rmStore.GetRoomByName(ctx, payload.Name)
-				 if err !=nil{
-						log.Println("Error(wss): ",  err.Error())
-						break  
+					ctx := context.Background()
+					room, err := rmStore.GetRoomByName(ctx, payload.Name)
+					if err != nil {
+						log.Println("Error(wss): ", err.Error())
+						break
 					}
 
-				 log.Printf("Room to clients: %v", room)
-				 for client,_ := range rm.lobbyClients{
+					log.Printf("Room to clients: %v", room)
+					for client, _ := range rm.lobbyClients {
 						client.inLobbyToClientEvent <- events.LobbyStateBroadcast{
-							Which: events.NewRoom,
-							Data: room,
+							Which:   events.NewRoom,
+							Data:    room,
 							Message: "New room created",
 						}
 					}
 				}
-				
-				// when a user updates their room; 
-				case  events.UpdateRoom: {
+
+			// when a user updates their room;
+			case events.UpdateRoom:
+				{
 					var payload struct {
 						Name string `json:"name"`
 					}
 					err := json.Unmarshal(action.Action.Value, &payload)
-					// if room id is not valid 
-					if payload.Name ==""{
-						break;
+					// if room id is not valid
+					if payload.Name == "" {
+						break
 					}
-				 ctx := context.Background()
-				 room,err := rmStore.GetRoomByName(ctx, payload.Name)
-				 if err !=nil{
-						log.Println("Error(wss): ",  err.Error())
-						break  
+					ctx := context.Background()
+					room, err := rmStore.GetRoomByName(ctx, payload.Name)
+					if err != nil {
+						log.Println("Error(wss): ", err.Error())
+						break
 					}
 
-				 log.Printf("(updated)Room to clients: %v", room)
-				 for client,_ := range rm.lobbyClients{
-						  client.inLobbyToClientEvent <- events.LobbyStateBroadcast{
-							Which: events.UpdatedRoom,
-							Data: room,
+					log.Printf("(updated)Room to clients: %v", room)
+					for client, _ := range rm.lobbyClients {
+						client.inLobbyToClientEvent <- events.LobbyStateBroadcast{
+							Which:   events.UpdatedRoom,
+							Data:    room,
 							Message: "Updated room",
 						}
 					}
 				}
-				
-			// incase user wants to join an available room
-				case events.JoinRoom:
 
+				// incase user wants to join an available room
+				// TODO: Sent message to room owner of the join request
+				// wait for the owner to resolve request or fail request after x-minutes waiting
+
+			// when room join request is sent
+			case events.JoinRoom:
+			  // payload struct 
+				var payload struct {
+					RoomId string `json:"roomId"`
+					Name string  `json:"playerName"`
+					Level store.PlayerLevel `json:"playerLevel"`
+				}
+				if err := json.Unmarshal(action.Action.Value, &payload); err != nil {
+					log.Printf("Failed unmarshall payload. Error: %v", err)
 					break
+				}
+				room, err := rmStore.GetRoomById(context.Background(), payload.RoomId)
+				if err != nil {
+					log.Println("Error(wss): ", err.Error())
+					break
+				}
+
+        // formated pertion
+				petition := events.PetitionRequest{
+					ID: uuid.New().String(),
+					PetitionNumber: fmt.Sprintf("Req:%s", uuid.New()),
+		      CreatedAt: time.Now(),
+					PlayerName: payload.Name,
+				  PlayerLevel: payload.Level,
+				  // TODO: Find actual scores instead of place-holders 
+					Stats: &events.PetitionStats{
+						Wins: 30,
+						Accuracy: 89,
+						Ping: 400,
+					},
+				}
+				
+				// notifier room owner of request
+				for client, _ := range rm.lobbyClients {
+					if client.userId == room.OwnerId {
+						client.inLobbyToClientEvent <- events.LobbyStateBroadcast{
+							Which:   events.IncomingJoinRequest,
+							Data:    petition,
+							Message: "A player is requesting to join your room",
+						}
+						break
+					}
+				}
 			}
 		}
 	}
@@ -178,6 +207,7 @@ func (rm *roomManager) HandleWS(w http.ResponseWriter, r *http.Request) {
 	// Create client from authenticated user
 	client := &client{
 		name:                 user.Username,
+		userId:               user.Id,
 		socket:               socket,
 		inLobbyToClientEvent: make(chan events.LobbyStateBroadcast),
 		manager:              rm,

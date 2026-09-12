@@ -1,16 +1,21 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import {type Room } from "#types/entities"
-import type { ClientMessage } from "#types/messages";
+import type {Room, Request } from "#types/entities"
+import type { ClientMessage} from "#types/messages";
 import { roomApi } from "../services/room-extend";
+import { act } from "react";
 
+
+  
 export type LobbyState = {
   socketStatus:  "disconnected" | "idle" | "connecting" |"connected" |"error";
   availableRooms: Room[];
   message?: string;
+  inComingRequests?: Request[]
 }
 
 const initialState: LobbyState = {
   availableRooms: [],
+  inComingRequests: [],
   socketStatus: 'idle'
 }
 
@@ -32,9 +37,15 @@ export const lobbySlice = createSlice({
     },
     connectSocket: (state, action: PayloadAction<{ url: string }>) => { },
     pushToLobby: (state, action: PayloadAction<ClientMessage>) => { },
+    addRequest: (state, action: PayloadAction<Request>) => { state.inComingRequests.push(action.payload) },
+    updateRequests: (state, action: PayloadAction<{ id: string }>) => {
+      state.inComingRequests = state.inComingRequests.filter((r) => r.id !== action.payload.id)
+    },
+    addMessage: (state, action: PayloadAction<string>)=> {state.message = action.payload},
 
   },
 
+  // effects outside this slice that should be reacted to 
   extraReducers: (builder) => {
     // optimistically update rooms upon creation
     builder
@@ -56,5 +67,6 @@ export const lobbySlice = createSlice({
 
 
 
-export const {changeSocketStatus, setAvailableRooms, pushToLobby, connectSocket,addRoom, removeRoom} = lobbySlice.actions;
+export const { changeSocketStatus, setAvailableRooms, pushToLobby, connectSocket,
+  addRoom, removeRoom, addRequest, addMessage, updateRequests } = lobbySlice.actions;
 export default lobbySlice.reducer;

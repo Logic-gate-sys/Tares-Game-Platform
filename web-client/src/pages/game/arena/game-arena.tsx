@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import { LiveFeed, GameplayArena, SuccessToast} from '#components/game/arena'
+import { LiveFeed, GameplayArena, SuccessToast } from '#components/game/arena'
 import { PlayerStats } from '#components/player/stats';
 
-export  function Arena() {
+
+
+
+export function Arena() {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   // Apply body classes on mount if not handled globally in index.html

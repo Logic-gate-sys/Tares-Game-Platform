@@ -25,6 +25,7 @@ func SetUser(r *http.Request, user *store.User) *http.Request {
 
 func GetUser(r *http.Request) *store.User {
 	user, ok := r.Context().Value(contextUserKey).(*store.User)
+	//TODO: Panic stops server, needs a way to gracefully remove user
 	if !ok {
 		panic("malicious actor, back off!")
 	}
@@ -82,6 +83,7 @@ func (um *UserMiddleware) RequireAuth(next http.Handler) http.HandlerFunc {
 			utils.WriteJSON(w, http.StatusForbidden, utils.Envlope{"message": "Unauthorised, back-off !"})
 			return
 		}
+		
 		next.ServeHTTP(w, r)
 	})
 }

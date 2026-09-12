@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/logic-gate-sys/tares-cli/internals/middleware"
 	"github.com/logic-gate-sys/tares-cli/internals/store"
@@ -45,6 +46,8 @@ func (rh *RoomHandler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) 
 		IconBgClass:        tempData.IconBg,
 		IconTextColorClass: tempData.IconText,
 	}
+	
+	//INFO(logic): Got actual user id instead of the current '0' placeholder
 	roomBody.OwnerId = user.Id
 
 	room, err := rh.RoomStore.CreateRoom(&roomBody, r.Context())

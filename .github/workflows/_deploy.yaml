@@ -1,0 +1,62 @@
+name: Reusable Deploy Phase
+on: 
+  workflow_call:
+    inputs:
+        run_frontend:
+          required: true
+          type: boolean
+        run_backend:
+          required: true
+          type: boolean
+    secrets:
+      aws-access-key-id:
+        required: true
+      aws-secret-access-key:
+        required: true
+      ec2-host:
+        required: true
+      ec2-ssh-key:
+        required: true
+      ec2-username:
+        required: true
+      aws-region: 
+        required: true
+
+
+jobs:
+  deploy-frontend:
+    if: ${{inputs.run_frontend}}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.aws-access-key-id }}
+          aws-secret-access-key: ${{ secrets.aws-secret-access-key }}
+          aws-region: ${{secrets.aws-region}}
+      - run: aws s3 sync dist/ s3://${{ vars.AWS_S3_BUCKET }}/ --delete
+  
+  deploy-backend:
+    if: ${{ inputs.run_backend }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: bin
+          path: bin/
+    
+      - name: Configure SSH
+        run: |
+            mkdir -p ~/.ssh/
+            echo "${{ secrets.ec2-ssh-key }}" > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            ssh-keyscan -H ${{ secrets.ec2-host }} >> ~/.ssh/known_hosts
+    
+      - name: Copy Binary to EC2
+        run: scp bin/server ${{ secrets.ec2-username }}@${{ secrets.ec2-host }}:/home/${{ secrets.ec2-username }}/tares-app/server
+              
+      - name: Restart Go Service
+        run: ssh ${{ secrets.ec2-username }}@${{ secrets.ec2-host }} "sudo systemctl restart tares-app.service"

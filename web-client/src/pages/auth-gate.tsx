@@ -6,8 +6,8 @@ import { Footer } from "#components/footer";
 import { Outlet } from "react-router-dom";
 import { useAnimation } from '#components/index';
 import { useDispatch } from "react-redux";
-import { connectSocket } from '#store/slices/lobby-slice';
-import { setToken } from "#store/slices/auth-slice";
+import { connectSocket } from '#store/slices/lobby';
+import { setToken } from "#store/slices/auth";
 import { Loader } from "#components/ui/loader";
 import { MessageBox } from "#components/ui/notification";
 

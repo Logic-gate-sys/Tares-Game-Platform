@@ -3,89 +3,100 @@ import { CreateRoomModal } from '#components/form-modals';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from 'src/store/store';
 import { type Room, type RoomCreateType } from '#types/entities';
-import {useCreateRoomMutation, useDeleteRoomMutation, useUpdateRoomMutation} from '#store/services/room-extend';
-import { pushToLobby } from '#store/slices/lobby-slice'
+import { useCreateRoomMutation, useDeleteRoomMutation, useUpdateRoomMutation } from '#store/services/room-extend';
+import { pushToLobby, updateRequests, } from '#store/slices/lobby'
 import { RoomCard } from '#components/game/room';
 import { DeleteModal } from '#components/game/delete-modal';
 import { SettingsModal } from '#components/game/room-setting-modal';
 import { useAuth } from '#store/auth-reducer';
 import { useUI } from '#context/ui-context';
 import { Loader } from '#components/ui/loader';
+import { PetitionCard } from '#components/ui/petition';
 
 
 
+// sample notification data
+const petitionData = [
+  {
+    id: "1",
+    petitionNumber: "REQ-9083",
+    timeAgo: "1m",
+    expiresIn: "01:12",
+    playerName: "NOVA_GLITCH",
+    playerLevel: 19,
+    playerRank: "NOVICE",
+    stats: { wins: 32, accuracy: 88.5, ping: 45 },
+    targetRoom: "CYBERPUNK CITY",
+    hostBypass: "NO",
+  },
+  {
+    id: "2",
+    petitionNumber: "REQ-9084",
+    timeAgo: "3m",
+    expiresIn: "00:58",
+    playerName: "VOID_RUNNER",
+    playerLevel: 41,
+    playerRank: "VERIFIED",
+    stats: { wins: 128, accuracy: 94.2, ping: 22 },
+    targetRoom: "NEON DISTRICT",
+    hostBypass: "YES",
+  },
+  {
+    id: "3",
+    petitionNumber: "REQ-9085",
+    timeAgo: "7m",
+    expiresIn: "02:34",
+    playerName: "PIXEL_WARDEN",
+    playerLevel: 27,
+    playerRank: "NOVICE",
+    stats: { wins: 54, accuracy: 81.7, ping: 67 },
+    targetRoom: "SHADOW ARENA",
+    hostBypass: "NO",
+  },
+  {
+    id: "4",
+    petitionNumber: "REQ-9086",
+    timeAgo: "12m",
+    expiresIn: "00:41",
+    playerName: "ECHO_STRIKE",
+    playerLevel: 58,
+    playerRank: "VERIFIED",
+    stats: { wins: 243, accuracy: 97.1, ping: 18 },
+    targetRoom: "SKYLINE CORE",
+    hostBypass: "YES",
+  },
+  {
+    id: "5",
+    petitionNumber: "REQ-9087",
+    timeAgo: "25m",
+    expiresIn: "03:09",
+    playerName: "CRYPT_FOX",
+    playerLevel: 33,
+    playerRank: "NOVICE",
+    stats: { wins: 89, accuracy: 90.3, ping: 39 },
+    targetRoom: "GLITCH VAULT",
+    hostBypass: "NO",
+  },
+];
 
-// const ARENAS_DATA: Room[] = [
-//   {
-//     id: '01',
-//     name: 'CYBERPUNK CITY',
-//     capacity: 8,
-//     icon: 'sports_esports',
-//     status: 'online',
-//     iconBgClass: 'bg-primary-container',
-//     iconTextColorClass: 'text-paper-white',
-//     playersText: '5/8 Players',
-//     timeLeftText: '02:45 Left',
-//     avatars: [
-//       { src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCsVRk3dArpX4pYLssMhALAvOfYy80K900dqMN3thc1H4ULtZxJgdRQxhh8I_hjegJkZUqHNV4c80NeeqN9Y76ws3G4nWUpdXFeW4JiR5BYEZ0EGonA9Ot_vKJkQ6mSALOMVeQKElxXNwe2wSgwNp_euBs9U1sDQP0Ocpq-uWTDZoau449QwkY718hBpV62rM9LcCaR2bPosPZAj5lxVz9UaI3yRrZ9EustfCi49z2FQmDN63wATtIAJ6wrwEP6RH_5ujQdp77bkAR6', alt: 'Cyberpunk player avatar', bgClass: 'bg-sky-blue' },
-//       { src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAxhP-_1o3-uU8VwUvUOWEMZL5olbaT_PWiyqh02W7qcXD9qXQOkajEdaPVOfAlF_EgParp5a7-KwPc0C2YKih0SdIet1s7xhU6PNpMBgZWeZRAHuK66JWHjygqiHUlAqduWG3X9uic5RcTvVJ6ObKXKJO9JiX9MyS6NmfEXztAhXUGicxeamxkK9OD5PEuQuGQJqT0QSaHFrmeoBOgbEWR7dQqqVKocx3kr4mePrPeWbUHo_QAc0HXw_GXfmO1NebTE9Fo4YD8W3D3', alt: 'Pro gamer avatar', bgClass: 'bg-primary-fixed' },
-//     ],
-//     extraPlayersCount: 3,
-//   },
-//   {
-//     id: '02',
-//     name: 'HACKER ZENITH',
-//     capacity: 8,
-//     icon: 'terminal',
-//     status:'online',
-//     iconBgClass: 'bg-secondary-container',
-//     iconTextColorClass: 'text-deep-ink',
-//     playersText: '2/8 Players',
-//     timeLeftText: 'Starting Soon',
-//     avatars: [
-//       { src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCURNcvzYRg2m1fZfp1lU0x6fhDS-iMC4U25W04dxetpXSGYaCoOp-nIQRiYIpsX1CyBdrpFY6nXimW80xLs8SL0ORxj9clrSDKJA-E1ebTyob7SkA6edvrNg8X0FAu8pQeN6jOYVy8houupFCKY0rb3wS4jOtPZpb3DJiw2ezjsQogXXzCVzXtVHNH_MRdmo0LShdMG_J_tBZdReVB7Zi9ewMIkIH8wji1zd6trhhLO8jEcVCXH_5RNC-l4PlzijKEjgXchXFz_H5e', alt: 'Futuristic hacker avatar', bgClass: 'bg-tertiary-fixed' },
-//       { src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuChySjq5xRvuYlJnMD-UlBba6HRfKUz5LfwzV-njsA0iqaDY5WVzfuVTXzoh-5FXkodumKjNihxqfWqOGYepRgJytdxvtWFb0RlDXcDtDoBDBmv5UJeoHBUtgUexrtR8U1vHR07wOLJ0ZOz79uzLX0HiUOwWXgrpb4V7W7hm4HENliAmO9IszFr0lXPDJw_EAyDFvCJR4ZhkrcUOZ_0Dthd96nBytUzQl5Av9cdcnbfTPPnm9qBIvQItalJOgN1hfGSEBIEbBrkF4L1', alt: 'Competitive player avatar', bgClass: 'bg-sky-blue' },
-//     ],
-//   },
-//   {
-//     id: '03',
-//     name: 'SPEED RUNNERS',
-//     capacity: 8,
-//     icon: 'bolt',
-//     status:'offline',
-//     iconBgClass: 'bg-tertiary-container',
-//     iconTextColorClass: 'text-paper-white',
-//     playersText: '7/10 Players',
-//     timeLeftText: '00:52 Left',
-//     avatars: [
-//       { src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCYndfhK6Cd97AmI11RP_vtulSUCLq7VoXmSpo-7JaQtTI9Ssdj0YKC_4AMa_JG12g8XiX2ofjy3Zle3VedQBkSSlC24tLHy6sB4lGPUiKhk2PetVkRLtllLOc5xcHt3l9aNruCvpts-NRl289wR6MEHRYhtOnD6ppcJmKbS3nqIX4gqKCr8uRzTtIREg8hvXRh9QBDGrEowlxkz9kwjDgW57ZAHCzt_FbIR0vh676d5anJGD-SYCRct0TEOtO3Jx7Z5PNYUB_5q48U', alt: 'Street culture avatar', bgClass: 'bg-primary-fixed' },
-//       { src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDfT3NDy0L0qBHLIQAWeKzK2deBJcPgqVa3_7BGkK5xKpiUbhTxfUgrKNP4xz_k_fycX8-eBYP-Qcd-Xy7UL3Hz0OZT_2ITRSBf59F6ainikF_hQp00Ghhje6aF099Gkr1snFr7fsb_vlTmb7l3yqBvatCHSCyFfjdUw_TMEpXWHykmS-0mMsX1RawE2ID3uCi03Vt3M_QF2Y4gFQa_JSDmaRE_YCZppuFRwIq-MAkyIThgh_2VKccukdj6Byhsqb4RXZ22G4UAVsoJ', alt: 'Female gamer avatar', bgClass: 'bg-secondary-fixed' },
-//     ],
-//     extraPlayersCount: 5,
-//   },
-// ];
 
 export function Lobby() {
   const dispatch = useDispatch();
-  const { availableRooms } = useSelector((state: RootState) => state.lobby)
+  const { availableRooms, inComingRequests } = useSelector((state: RootState) => state.lobby)
   const { state } = useAuth();
-  const { showNotice} = useUI();
-
-
+  const { showNotice } = useUI();
   // RTK QUERY & MUTATION FLAGS
-  const [createRoom, { isLoading: isCreating}] = useCreateRoomMutation();
+  const [createRoom, { isLoading: isCreating }] = useCreateRoomMutation();
   const [deleteRoom, { isLoading: isDeleting }] = useDeleteRoomMutation();
   const [updateRoom, { isLoading: isUpdating }] = useUpdateRoomMutation();
-
   // MODALS & SELECTION STATES
   const [openRoomSettings, setOpenRoomSettings] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [selectedRooId, setSelectedRoomId] = useState<string>();
   const [openModal, setOpenModal] = useState<boolean>(false);
 
-
-  const selectedRoom = selectedRooId? availableRooms?.find((rm)=> rm.id ===selectedRooId):null
-  const isBusy = isCreating || isDeleting ||isUpdating;
+  const selectedRoom = selectedRooId ? availableRooms?.find((rm) => rm.id === selectedRooId) : null
+  const isBusy = isCreating || isDeleting || isUpdating;
 
 
   // ASYNC HANDLERS
@@ -93,15 +104,14 @@ export function Lobby() {
     try {
       await createRoom(data).unwrap();
       setOpenModal(false)
-      dispatch(pushToLobby({type:'in:lobby', payload:{action:'room:create', value: {name: data.name}}}))
+      dispatch(pushToLobby({ type: 'in:lobby', payload: { action: 'room:create', value: { name: data.name } } }))
       showNotice("Success", "Room created successfully")
     } catch (err: unknown) {
       console.log("error: ", err)
       showNotice("Error !", "Failed to create room ")
     }
   }
-
-  const handleUpdateRoom= async (data: Partial<Room>) => {
+  const handleUpdateRoom = async (data: Partial<Room>) => {
     try {
       await updateRoom(data).unwrap();
       setOpenRoomSettings(false);
@@ -112,7 +122,6 @@ export function Lobby() {
       showNotice("Error !", "Failed to update room ")
     }
   }
-
   // deleting a room
   const handleDeleteRoom = async () => {
     if (!selectedRooId) return;
@@ -125,6 +134,26 @@ export function Lobby() {
       showNotice("Error!", "Failed to delete room ");
     }
   }
+  // handle sending join requests
+  const handleRoomJoinRequest = async (e) => {
+    e.preventDefault();
+    if (selectedRooId) return;
+    try {
+      dispatch(pushToLobby({ type: 'in:lobby', payload: { action: "request:room:join", value: { roomId: selectedRooId, playerName: state.user.username, playerLever: state.user.p_level} } }));
+      showNotice("Success", "Request sent to room owner, please wait while your request is processed...")
+    } catch (err) {
+      console.error(err)
+      showNotice("Error", "Request to join room failed")
+    }
+  }
+
+  // Sync HANDLERS
+  const handlePetitionAction = (id: string, actionType: 'resolved' | 'rejected') => {
+    console.log(`Action: ${actionType} on petition ID: ${id}`);
+    dispatch(updateRequests({ id }));
+  };
+
+
 
   return (
     <div className="relative bg-surface text-on-surface min-h-screen overflow-x-hidden font-body-md selection:bg-action-red selection:text-white">
@@ -218,54 +247,13 @@ export function Lobby() {
             <div className="flex flex-col gap-4">
               {availableRooms.map((arena, idx) => {
                 return <div key={idx} onClick={() => setSelectedRoomId(arena.id)}>
-                  <RoomCard  data={arena} playerId={state?.user?.id ?? "none"}
+                  <RoomCard data={arena} playerId={state?.user?.id}
+                    onJoin={handleRoomJoinRequest}
                     onOpenDelete={() => setOpenDelete(true)}
                     onOpenSettings={() => setOpenRoomSettings(true)}
                   />
                 </div>
               })}
-              {/*{ARENAS_DATA.map((arena) => (
-                <div
-                  key={arena.id}
-                  className="bg-paper-white border-4 border-deep-ink p-6 neubrutalism-shadow-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(18,23,33,1)] transition-all group"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-6">
-                      <div className={`${arena.iconBgClass} ${arena.iconTextColorClass} p-4 border-2 border-deep-ink`}>
-                        <span className="material-symbols-outlined text-3xl">{arena.icon}</span>
-                      </div>
-                      <div>
-                        <h4 className="text-headline-md font-headline-md text-deep-ink">{arena.name}</h4>
-                        <p className="text-body-md font-body-md text-secondary flex items-center gap-2">
-                          <span className="material-symbols-outlined text-sm">groups</span>
-                          {arena.playersText} • {arena.timeLeftText}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 w-full md:w-auto">
-                      <div className="flex -space-x-4">
-                        {arena.avatars.map((avatar, idx) => (
-                          <img
-                            key={idx}
-                            className={`w-10 h-10 rounded-full border-2 border-deep-ink ${avatar.bgClass}`}
-                            alt={avatar.alt}
-                            src={avatar.src}
-                          />
-                        ))}
-                        {arena.extraPlayersCount && (
-                          <div className="w-10 h-10 rounded-full border-2 border-deep-ink bg-deep-ink flex items-center justify-center text-paper-white font-label-bold text-xs">
-                            +{arena.extraPlayersCount}
-                          </div>
-                        )}
-                      </div>
-                      <button className="flex-1 md:flex-none px-6 py-2 bg-sky-blue border-2 border-deep-ink font-label-bold text-deep-ink group-hover:bg-action-red group-hover:text-paper-white transition-colors">
-                        JOIN ARENA
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}*/}
             </div>
           </div>
 
@@ -310,8 +298,54 @@ export function Lobby() {
         <Loader isLoading={isBusy} />
         {/*--------------- MODAL FORM -----------------*/}
         {openModal && (<CreateRoomModal onClose={() => setOpenModal(false)} onSubmit={handleCreateRoom} />)}
-        {openDelete && <DeleteModal title={selectedRoom?.name??"" } onClose={() => setOpenDelete(false)} onConfirm={handleDeleteRoom} />}
+        {openDelete && <DeleteModal title={selectedRoom?.name ?? ""} onClose={() => setOpenDelete(false)} onConfirm={handleDeleteRoom} />}
         {openRoomSettings && <SettingsModal room={selectedRoom} onClose={() => setOpenRoomSettings(false)} onSave={handleUpdateRoom} />}
+
+        {/*--------------- PETITION MODAL STACK -----------------*/}
+        {inComingRequests.length > 0 && (
+          <div className="fixed inset-0 z-99 flex items-center justify-center p-4 bg-[#121721]/40 backdrop-blur-md">
+            {/* 1. Relative container mapping over 'petitions' state instead of static 'petitionData' */}
+            <div className="relative w-full max-w-2xl flex items-center justify-center min-h-[300px]">
+
+              {inComingRequests.map((dt, index) => {
+                // Performance: Only render the top 4 cards visually
+                if (index > 3) return null;
+
+                // Dynamic styling based on the array index
+                const isFront = index === 0;
+                const scale = 1 - index * 0.05;
+                const translateY = index * 16;
+                const opacity = index === 0 ? 1 : 1 - index * 0.2;
+
+                return (
+                  <div
+                    key={dt.id}
+                    className="absolute w-full transition-all duration-300 ease-out shadow-2xl"
+                    style={{
+                      zIndex: 50 - index,
+                      transform: `translateY(${translateY}px) scale(${scale})`,
+                      opacity: opacity,
+                      transformOrigin: 'top',
+                      // 4. Critical: only the front card is clickable
+                      pointerEvents: isFront ? 'auto' : 'none',
+                    }}
+                  >
+                    {/* Re-added your animate-in wrapper for the initial pop-in */}
+                    <div className="animate-in fade-in zoom-in duration-200">
+                      <PetitionCard
+                        {...dt}
+                        // Connect to the handler to remove the card and reveal the next
+                        onReject={() => handlePetitionAction(dt.id, 'rejected')}
+                        onResolve={() => handlePetitionAction(dt.id, 'resolved')}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
       </main>
     </div>
   );

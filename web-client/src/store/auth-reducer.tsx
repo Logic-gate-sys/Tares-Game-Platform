@@ -2,14 +2,16 @@ import { apiClient } from "#store/services/requests";
 import { createContext, use, useEffect, useReducer } from "react";
 import type { LoginRequest, AuthResponse } from "#types/type";
 
-
-
 // STATE & ACTION
 export interface AuthState {
   user?: {
     id: string;
     email: string;
-    username?: string,
+    username?: string;
+    p_level?: string;
+    bio?: string;
+    total_score?: number; 
+    createdAt: Date; 
   };
   token?: string | null;
   status: "iddle" | "is-loading" | "error" | "is-authenticated" | "loggedout";
@@ -136,7 +138,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'progress', payload: { amount: 35 } })
     try {
       const res = await apiClient.post<LoginRequest>("/users/login", data);
-      console.log("STATUS: ", res);
       if (res.status >= 400) {
         dispatch({ type: "error", payload: { errorMsg: `Failed to login: Status ${res.status}` } });
         dispatch({ type: "progress", payload: { amount: 100 } })

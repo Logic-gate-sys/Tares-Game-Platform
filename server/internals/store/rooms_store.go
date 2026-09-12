@@ -37,7 +37,7 @@ type PlayerAvatar struct {
 
 type RoomViewModel struct {
 	ID                 string         `json:"id"`
-	OwnerId            string         `json:"ownerId"`
+	OwnerId            int            `json:"ownerId"`
 	Name               string         `json:"name"`
 	Capacity           int            `json:"capacity"`
 	Status             string         `json:"status"`
@@ -72,6 +72,7 @@ type RoomStore interface {
 	CreateRoom(rm *CreateRoom) (CreateRoom, error)
 	GetAllRooms(ctx context.Context) ([]RoomViewModel, error)
 	GetRoomByName(ctx context.Context, name string) (RoomViewModel, error)
+	GetRoomById(ctx context.Context, id string) (RoomViewModel, error)
 	DeleteRoom(ctx context.Context, id string) (bool, error)
 	UpdateRoom(ctx context.Context, id string, d RoomUpdateType) error
 }
@@ -170,6 +171,43 @@ func (pr *PostGresRoomStore) GetRoomByName(ctx context.Context, name string) (Ro
 	`
 	var avatarsRaw []byte
 	err := pr.db.QueryRowContext(ctx, query, name).Scan(&rm.ID, &rm.OwnerId, &rm.Name, &rm.Capacity, &rm.Status, &rm.Icon,
+		&rm.IconBgClass, &rm.IconTextColorClass, &rm.Players, &avatarsRaw, &rm.ExtraPlayersCount)
+	if err != nil {
+		return RoomViewModel{}, err
+	}
+	err = json.Unmarshal(avatarsRaw, &rm.Avatars)
+	if err != nil {
+		return RoomViewModel{}, err
+	}
+	return rm, nil
+}
+
+func (pr *PostGresRoomStore) GetRoomById(ctx context.Context, id string) (RoomViewModel, error) {
+	var rm RoomViewModel
+	query := `
+		SELECT
+		  r.id::text,r.owner_id,r.name,r.capacity,r.status,r.icon,r.icon_bg_class,r.icon_text_color_class,
+			COUNT(rp.user_id)::INT AS players,
+			COALESCE(
+		   json_agg(
+					json_build_object(
+						'src', COALESCE(u.avatar_url, ''),
+						'alt', COALESCE(u.username, ''),
+						'bgClass', COALESCE(u.bg_class, '')
+					)
+				) FILTER (WHERE u.id IS NOT NULL),
+				'[]'::json
+			) AS avatars,
+			GREATEST(0, COUNT(rp.user_id)::INT - 3) AS extra_players_count
+		FROM rooms r
+		LEFT JOIN room_players rp ON r.id = rp.room_id
+		LEFT JOIN users u ON rp.user_id = u.id
+		WHERE r.id = $1
+		GROUP BY r.id
+		ORDER BY r.created_at DESC;
+	`
+	var avatarsRaw []byte
+	err := pr.db.QueryRowContext(ctx, query, id).Scan(&rm.ID, &rm.OwnerId, &rm.Name, &rm.Capacity, &rm.Status, &rm.Icon,
 		&rm.IconBgClass, &rm.IconTextColorClass, &rm.Players, &avatarsRaw, &rm.ExtraPlayersCount)
 	if err != nil {
 		return RoomViewModel{}, err

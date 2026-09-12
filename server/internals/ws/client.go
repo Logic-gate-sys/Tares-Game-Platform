@@ -11,6 +11,7 @@ import (
 // Holds the state of any connected device (e.g browser, terminal) at any time
 type client struct {
 	name                 string          // connect client's name
+	userId               int 
 	socket               *websocket.Conn // socket connection by which the client communicates over the network
 	inLobbyToClientEvent chan events.LobbyStateBroadcast
 	inGameToClientEvent  chan events.GameStateBroadcast //messages going from server to client
