@@ -1,20 +1,78 @@
-# .github/workflows/ci.yml — Stable stage, segment 10
-# PR validation. Calls the reusable build workflow. Does not deploy.
+# # .github/workflows/ci.yml — Stable stage, segment 10
+# # PR validation. Calls the reusable build workflow. Does not deploy.
 
-name: CI
+# name: CI
 
-on:
-    pull_request:
-        branches: [main, feature]
+# on:
+#     pull_request:
+#         branches: [main, feature]
 
-# in pull request the latest pull request wins
-concurrency:
-    group: ci-${{ github.event.pull_request.number }}
-    cancel-in-progress: true
+# # in pull request the latest pull request wins
+# concurrency:
+#     group: ci-${{ github.event.pull_request.number }}
+#     cancel-in-progress: true
+
+# jobs:
+#     run-all-tests:
+#         uses: ./.github/workflows/_test.yaml
+#     build:
+#         needs: run-all-tests
+#         uses: ./.github/workflows/_build.yaml
+
+
+
+name: Main CI/CD Pipeline
+on: 
+  push: 
+    branches: [main]
+  pull_request:
+    branches: [main] 
+  workflow_dispatch: # to keep the run action button manually in github
 
 jobs:
-    run-all-tests:
-        uses: ./.github/workflows/_test.yaml
-    build:
-        needs: run-all-tests
-        uses: ./.github/workflows/_build.yaml
+  detect-changes:
+      runs-on: ubuntu-latest
+      outputs:
+        frontend: ${{ steps.filter.outputs.frontend }}
+        backend: ${{ steps.filter.outputs.backend }}
+      steps:
+        - uses: actions/checkout@v4
+        - uses: dorny/paths-filter@v3
+          id: filter
+          with:
+            filters: |
+              frontend:
+                - 'web-client/**' # folder of client
+              backend:
+                - 'server/**' # Folder of server
+
+  test-phase:
+    needs: detect-changes
+    uses: ./.github/workflows/_test.yaml
+    with:
+      run_frontend: ${{ needs.detect-changes.outputs.frontend == 'true' }}
+      run_backend: ${{ needs.detect-changes.outputs.backend == 'true' }}
+    
+  build-phase:
+    needs: [detect-changes, test-phase]
+    uses: ./.github/workflows/_build.yaml
+    with:
+      run_frontend: ${{ needs.detect-changes.outputs.frontend == 'true' }}
+      run_backend: ${{ needs.detect-changes.outputs.backend == 'true' }}
+    
+  deploy-phase:
+    needs: build-phase
+    # Only deploy if the code was actually merged into main
+    if: github.event_name == 'push' 
+    uses: ./.github/workflows/deploy.yaml
+    with:
+      run_frontend: ${{ needs.detect-changes.outputs.frontend == 'true' }}
+      run_backend: ${{ needs.detect-changes.outputs.backend == 'true' }}
+      environment: production
+    secrets:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      ec2-host: ${{ secrets.EC2_HOST }}
+      ec2-ssh-key: ${{ secrets.EC2_SSH_KEY }}
+      ec2-username: ${{secrets.EC2_USERNAME}}
+      aws-region: ${{secrets.AWS_REGION}}
