@@ -1,0 +1,34 @@
+name: Staging CI/CD Pipeline
+on: 
+  push: 
+    branches: [staging]
+  workflow_dispatch:
+
+jobs:
+  test-phase:
+    uses: ./.github/workflows/_test.yaml
+    with:
+      run_frontend: true
+      run_backend: true
+    
+  build-phase:
+    needs: test-phase
+    uses: ./.github/workflows/_build.yaml
+    with:
+      run_frontend: true
+      run_backend: true
+      
+  deploy-staging:
+    needs: build-phase
+    uses: ./.github/workflows/deploy.yaml
+    with:
+      run_frontend: true
+      run_backend: true
+      environment: staging
+    secrets:
+      aws-access-key-id: ${{ secrets.STAGING_AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.STAGING_AWS_SECRET_ACCESS_KEY }}
+      ec2-host: ${{ secrets.STAGING_EC2_HOST }}
+      ec2-ssh-key: ${{ secrets.STAGING_EC2_SSH_KEY }}
+      ec2-username: ${{secrets.STAGING_EC2_USERNAME}}
+      aws-region: ${{STAGING_AWS_REGION}}

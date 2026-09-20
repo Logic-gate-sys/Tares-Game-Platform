@@ -1,0 +1,94 @@
+name: tares platform
+
+services:
+  user-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${USER_DB_USER:-tares_user}
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD:-tares_user_dev_password}
+      POSTGRES_DB: ${USER_DB_NAME:-tares_users}
+    ports:
+      - "${USER_DB_PORT:-5432}:5432"
+    volumes:
+      - user-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    profiles: ["dev", "prod"]
+
+  game-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${GAME_DB_USER:-tares_game}
+      POSTGRES_PASSWORD: ${GAME_DB_PASSWORD:-tares_game_dev_password}
+      POSTGRES_DB: ${GAME_DB_NAME:-tares_game}
+    ports:
+      - "${GAME_DB_PORT:-5433}:5432"
+    volumes:
+      - game-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    profiles: ["dev", "prod"]
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    profiles: ["dev", "prod"]
+
+  user-service:
+    build:
+      context: ./backend_platform/user_microservice
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: development
+      SERVER_PORT: 3000
+      DATABASE_URL: postgresql://${USER_DB_USER:-tares_user}:${USER_DB_PASSWORD:-tares_user_dev_password}@user-db:5432/${USER_DB_NAME:-tares_users}
+      AUTH_SECRET: ${AUTH_SECRET:-development-only-change-this-secret-to-a-long-random-value}
+      CLOUDINARY_URL: ${CLOUDINARY_URL:-cloudinary://dev:dev@dev}
+    depends_on:
+      user-db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    profiles: ["dev", "prod"]
+
+  wss-service:
+    build:
+      context: ./backend_platform/wss_microservice
+      dockerfile: Dockerfile
+    environment:
+      WSS_PORT: 8081
+      DATABASE_URL: postgresql://${GAME_DB_USER:-tares_game}:${GAME_DB_PASSWORD:-tares_game_dev_password}@game-db:5432/${GAME_DB_NAME:-tares_game}?sslmode=disable
+      AUTH_SECRET: ${AUTH_SECRET:-development-only-change-this-secret-to-a-long-random-value}
+    depends_on:
+      game-db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8082:8081"
+    profiles: ["dev", "prod"]
+
+  dev-gateway:
+    image: nginx:1.29-alpine
+    volumes:
+      - ./nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - user-service
+      - wss-service
+    ports:
+      - "8081:80"
+    profiles: ["dev"]
+
+volumes:
+  user-db-data:
+  game-db-data:
+  redis-data:

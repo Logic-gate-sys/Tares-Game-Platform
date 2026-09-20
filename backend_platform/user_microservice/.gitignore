@@ -1,0 +1,3 @@
+src/config/.env.*
+node_modules
+coverage
