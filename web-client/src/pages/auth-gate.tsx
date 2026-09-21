@@ -62,7 +62,10 @@ export function AuthGate() {
   if (state.status === "is-authenticated" && state.token) {
     // auth should have token
     dispatch(setToken(state.token));
-    dispatch(connectSocket({ url: `ws://${location.hostname}:8081/ws?token=${encodeURIComponent(state.token)}` }));
+    const protocol = location.protocol === "https:" ? "wss" : "ws";
+    const apiBaseUrl = import.meta.env.VITE_BASE_URL ?? window.location.origin;
+    const socketBaseUrl = apiBaseUrl.replace(/^https?/, protocol);
+    dispatch(connectSocket({ url: `${socketBaseUrl}/api/v1/ws?token=${encodeURIComponent(state.token)}` }));
     return <Outlet />;
   };
 

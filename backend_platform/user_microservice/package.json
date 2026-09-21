@@ -43,6 +43,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@tsconfig/node24": "^24.0.5",
+    "@types/cors": "^2.8.19",
     "@types/dotenv": "^6.1.1",
     "@types/node": "^26.6.1",
     "@types/pg": "^8.23.1",
@@ -62,6 +63,7 @@
     "@types/express": "^5.0.6",
     "@types/multer": "^2.2.0",
     "cloudinary": "^2.11.0",
+    "cors": "^2.8.6",
     "custom-env": "^2.0.6",
     "dotenv": "^18.0.0",
     "drizzle-orm": "^1.0.0-rc.4",

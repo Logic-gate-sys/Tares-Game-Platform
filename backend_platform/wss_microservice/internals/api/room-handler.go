@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/logic-gate-sys/tares-cli/internals/middleware"
 	"github.com/logic-gate-sys/tares-cli/internals/store"

@@ -25,20 +25,11 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: false,
-
-    // Proxy API calls to the Go backend
-    // Example: http://localhost:5173/api/signup → http://localhost:8081/api/signup
     proxy: {
-      "/api": {
-        target: "http://localhost:8081",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, "/api"),
-      },
-      "/ws": {
-        target: "ws://localhost:8081",
-        ws: true,
-      },
-    },
+      '/users': 'http://localhost:8081',
+      '/rooms': 'http://localhost:8081',
+      '/ws': { target: 'ws://localhost:8081', ws: true }
+    }
   },
 
   build: {
