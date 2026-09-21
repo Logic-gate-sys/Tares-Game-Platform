@@ -6,7 +6,7 @@ cloudinary.config({
   url: env.CLOUDINARY_URL,
 });
 
-export function upload(file: Express.Multer.File, options: UploadApiOptions = {}, folder='tares/player-avatars'
+export function upload(file: Express.Multer.File, options: UploadApiOptions = {}, folder='tares/avatars'
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
