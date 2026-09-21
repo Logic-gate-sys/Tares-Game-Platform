@@ -7,6 +7,3 @@ export async function migrateDatabase(): Promise<void> {
     migrationsFolder: resolve(process.cwd(), 'drizzle'),
   });
 }
-
-
-await migrateDatabase();

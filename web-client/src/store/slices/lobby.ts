@@ -1,8 +1,7 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type {Room, Request } from "#types/entities"
 import type { ClientMessage} from "#types/messages";
-import { roomApi } from "../services/room-extend";
-import { act } from "react";
+import { roomApi } from "../services/roomExtend";
 
 
   
@@ -45,7 +44,8 @@ export const lobbySlice = createSlice({
 
   },
 
-  // effects outside this slice that should be reacted to 
+  // There effects outside this slice, this slice should react to relevant effects that 
+  // affects it's data state
   extraReducers: (builder) => {
     // optimistically update rooms upon creation
     builder
@@ -61,7 +61,6 @@ export const lobbySlice = createSlice({
       .addDefaultCase((state)=> state)
   }
 });
-
 
 
 

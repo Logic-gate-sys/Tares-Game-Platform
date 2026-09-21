@@ -1,13 +1,12 @@
-import { baseApi } from "./api-slice";
+import { baseApi } from "./baseApi";
 import type { Room, RoomCreateType } from "#types/entities";
-
 
 
 export const roomApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     createRoom: builder.mutation<Room, RoomCreateType>({
       query: (createData) => ({
-        url: '/api/v1/rooms',
+        url: '/rooms',
         method: 'POST',
         body: createData,
       }),
@@ -18,7 +17,7 @@ export const roomApi = baseApi.injectEndpoints({
 
     deleteRoom: builder.mutation<void, {id: string}>({
       query: (data) => ({
-        url: `/api/v1/rooms/${data.id}`,
+        url: `/rooms/${data.id}`,
         method: 'DELETE',
       }),
 
@@ -26,7 +25,7 @@ export const roomApi = baseApi.injectEndpoints({
     }),
     updateRoom: builder.mutation <Room, Partial<Room>>({
       query: (data) => ({
-        url: `/api/v1/rooms/${data.id}`,
+        url: `/rooms/${data.id}`,
         method: 'PATCH',
         body: data
       }),
@@ -34,7 +33,7 @@ export const roomApi = baseApi.injectEndpoints({
     }),
 
     getRooms: builder.query<Room[], void>({
-      query: () => '/api/v1/rooms', // auto defaults to GET
+      query: () => '/rooms', // auto defaults to GET
       providesTags: ['Rooms']
       /* providesTags: (results) => results? [...results.map((id)=> ({type:'Room' as const, id:id})), //specific item tags
         {type:'Rooms', id:'LIST'}] // collection tag

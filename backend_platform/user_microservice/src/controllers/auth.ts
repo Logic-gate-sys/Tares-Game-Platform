@@ -24,7 +24,7 @@ export async function signup(request: Request, response: Response): Promise<void
   }
 
   response.status(201).json({
-    user: toAuthUser(user),
+    user: user,
     token: createToken({sub: String(user.id),email: user.email,username: user.username,pLevel: user.playerLevel,}, 60 * 60 * 24),
   });
 }
@@ -37,29 +37,9 @@ export async function signin(request: Request, response: Response): Promise<void
   }
 
   response.json({
-    user: toAuthUser(user),
+    user: user,
     token: createToken({ sub: String(user.id),email: user.email,username: user.username, pLevel: user.playerLevel}, 60 * 60 * 24),
   });
-}
-
-function toAuthUser(user: {
-  id: number;
-  email: string;
-  username: string;
-  playerLevel: string;
-  bio: string;
-  totalScore: number;
-  createdAt: Date;
-}) {
-  return {
-    id: String(user.id),
-    email: user.email,
-    username: user.username,
-    p_level: user.playerLevel,
-    bio: user.bio,
-    total_score: user.totalScore,
-    createdAt: user.createdAt,
-  };
 }
 
 export async function requestPasswordReset(request: Request,response: Response): Promise<void> {

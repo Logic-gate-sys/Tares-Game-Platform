@@ -1,10 +1,5 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
-import {
-  confirmPasswordReset,
-  requestPasswordReset,
-  signin,
-  signup,
-} from '#controllers/auth';
+import {confirmPasswordReset, requestPasswordReset,signin,signup} from '#controllers/auth';
 import { validate } from '#middlewares/validate';
 import { avatarUpload } from '#middlewares/upload';
 import {passwordResetConfirmSchema,passwordResetRequestSchema,signinSchema,signupSchema} from '#schemas/auth';
