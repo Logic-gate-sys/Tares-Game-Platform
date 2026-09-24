@@ -24,7 +24,7 @@ export async function signUp(data: SignupData): Promise<StoredUser | undefined> 
     .values({
       email: data.email,
       username: data.username,
-      password: hashPassword(data.password),
+      password: await hashPassword(data.password),
       playerLevel: data.playerLevel ?? '1',
       rank: data.rank ?? 'unranked',
       bio: data.bio ?? '',
@@ -44,7 +44,7 @@ export async function signIn(data: SigninInput): Promise<StoredUser | undefined>
     .where(data.email ? eq(Users.email, data.email) : eq(Users.username, data.username!))
     .limit(1);
 
-  if (!user || !verifyPassword(data.password, user.password)) {
+  if (!user || !(await verifyPassword(data.password, user.password))) {
     return undefined;
   }
 
@@ -92,7 +92,7 @@ export async function resetPassoword( data: PasswordResetRequestInput): Promise<
 export async function confirmPasswordReset(userId: number,password: string): Promise<StoredUser | undefined> {
   const [user] = await db
     .update(Users)
-    .set({ password: hashPassword(password) })
+    .set({ password: await hashPassword(password) })
     .where(eq(Users.id, userId))
     .returning();
 

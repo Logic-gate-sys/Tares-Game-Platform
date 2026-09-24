@@ -1,5 +1,5 @@
 import { Rocket } from "lucide-react";
-import { MiniMerch } from "#components/mini-merch-nav";
+import { MiniMerch } from "#components/miniMerchNav";
 
 interface LetterTile {
     letter: string;

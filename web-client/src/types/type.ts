@@ -1,5 +1,4 @@
 
-// Auth responses
 export type SignupRequest = {
   email: string;
   username: string;
@@ -16,20 +15,20 @@ export type LoginRequest = {
 }
 
 export type AuthResponse = {
+  error?: unknown;
   token: string;
-  user: {
+  user?: {
     id: string;
     email: string;
     username?: string;
     p_level?: string;
     bio?: string;
-    total_score?: number; 
-    createdAt: Date; 
+    total_score?: number;
+    createdAt: string | Date;
   };
-}
+};
 
 export type ErrorResponse = {
   error: string;
   details?: unknown;
 }
-

@@ -52,7 +52,6 @@ services:
       SERVER_PORT: 3000
       DATABASE_URL: postgresql://${USER_DB_USER:-tares_user}:${USER_DB_PASSWORD:-tares_user_dev_password}@user-db:5432/${USER_DB_NAME:-tares_users}
       AUTH_SECRET: ${AUTH_SECRET:-development-only-change-this-secret-to-a-long-random-value}
-      CLOUDINARY_URL: ${CLOUDINARY_URL:-cloudinary://dev:dev@dev}
     depends_on:
       user-db:
         condition: service_healthy

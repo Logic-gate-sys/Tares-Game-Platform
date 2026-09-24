@@ -31,6 +31,11 @@ export const lobbySlice = createSlice({
     addRoom: (state, action: PayloadAction<Room>) => {
       state.availableRooms.push(action.payload)
     },
+    updateRoom: (state, action: PayloadAction<{ updatedRoom: Room }>) => {
+      state.availableRooms = state.availableRooms
+        .map((room) => room.id === action.payload.updatedRoom.id ?
+        action.payload.updatedRoom: room)
+    },
     removeRoom: (state, action: PayloadAction<{id: string}>) => {
       state.availableRooms = state.availableRooms.filter(rm=> rm.id !== action.payload.id)
     },
@@ -67,5 +72,5 @@ export const lobbySlice = createSlice({
 
 
 export const { changeSocketStatus, setAvailableRooms, pushToLobby, connectSocket,
-  addRoom, removeRoom, addRequest, addMessage, updateRequests } = lobbySlice.actions;
+  addRoom,updateRoom, removeRoom, addRequest, addMessage, updateRequests } = lobbySlice.actions;
 export default lobbySlice.reducer;

@@ -30,6 +30,9 @@ const envSchema = z.object({
   CLOUDINARY_URL: environment === 'test'
     ? z.string().refine((url) => url.startsWith('cloudinary://'), { message: 'Invalid cloudinary URL' }).optional()
     : z.string().refine((url) => url.startsWith('cloudinary://'), { message: 'Invalid cloudinary URL' }),
+  ALLOWED_ORIGINS: z.string()
+    .default('http://localhost:5173')
+    .transform((val) => val.split(",").map((origin)=> origin.trim()))
 });
 
 // export envschema type

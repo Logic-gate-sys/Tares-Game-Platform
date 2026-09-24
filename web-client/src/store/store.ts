@@ -2,7 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import { socketMiddleware } from "./middleware";
 import lobbyReducer from "./slices/lobby";
 import gameReduer from './slices/lobby'
-import { baseApi } from "./services/api-slice";
+import { baseApi } from "./services/baseApi";
 import authSlice  from "./slices/auth";
 
 

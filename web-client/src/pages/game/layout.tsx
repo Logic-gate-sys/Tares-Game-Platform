@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { BottomNav, Header } from "#components/game/arena";
-import { AccessDenied } from "#pages/not-authorised";
+import { AccessDenied } from "#pages/notAuthorised";
 import { useSelector } from "react-redux";
 import type { RootState } from "src/store/store";
 

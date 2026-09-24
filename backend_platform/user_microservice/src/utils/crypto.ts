@@ -1,52 +1,38 @@
-import {createHmac,randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
+import bcrypt from 'bcrypt';
+import jwt, { type JwtPayload } from 'jsonwebtoken';
 import { env } from '../environment.ts';
 
-const tokenEncoding = 'base64url';
+const passwordRounds = 12;
 
-export function hashPassword(password: string): string {
-  const salt = randomBytes(16).toString(tokenEncoding);
-  const hash = scryptSync(password, salt, 64).toString(tokenEncoding);
-  return `${salt}.${hash}`;
+export interface TokenClaims extends JwtPayload {
+  sub: string;
+  email?: string;
+  username?: string;
+  pLevel?: string;
+  purpose?: string;
 }
 
-export function verifyPassword(password: string, storedHash: string): boolean {
-  const [salt, expected] = storedHash.split('.');
-  if (!salt || !expected) return false;
-
-  const actual = scryptSync(password, salt, 64);
-  const expectedBuffer = Buffer.from(expected, tokenEncoding);
-  return actual.length === expectedBuffer.length &&
-    timingSafeEqual(actual, expectedBuffer);
+export function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, passwordRounds);
 }
 
-export function createToken(payload: Record<string, string>, expiresInSeconds: number): string {
-  const body = {
-    ...payload,
-    exp: Math.floor(Date.now() / 1000) + expiresInSeconds,
-  };
-  const encodedBody = Buffer.from(JSON.stringify(body)).toString(tokenEncoding);
-  const signature = createHmac('sha256', env.AUTH_SECRET)
-    .update(encodedBody)
-    .digest(tokenEncoding);
-  return `${encodedBody}.${signature}`;
+export function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  return bcrypt.compare(password, storedHash);
 }
 
-export function verifyToken(token: string): Record<string, string> {
-  const [encodedBody, signature] = token.split('.');
-  if (!encodedBody || !signature) throw new Error('Invalid token');
+export function createToken(
+  payload: Record<string, string>,
+  expiresInSeconds: number,
+): string {
+  return jwt.sign(payload, env.AUTH_SECRET, {
+    expiresIn: expiresInSeconds,
+  });
+}
 
-  const expectedSignature = createHmac('sha256', env.AUTH_SECRET)
-    .update(encodedBody)
-    .digest(tokenEncoding);
-  const actual = Buffer.from(signature, tokenEncoding);
-  const expected = Buffer.from(expectedSignature, tokenEncoding);
-  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
-    throw new Error('Invalid token');
+export function verifyToken(token: string): TokenClaims {
+  const payload = jwt.verify(token, env.AUTH_SECRET);
+  if (typeof payload === 'string' || typeof payload.sub !== 'string') {
+    throw new Error('Invalid token claims');
   }
-
-  const payload = JSON.parse(Buffer.from(encodedBody, tokenEncoding).toString()) as Record<string, string>;
-  if (Number(payload.exp) < Math.floor(Date.now() / 1000)) {
-    throw new Error('Token expired');
-  }
-  return payload;
+  return payload as TokenClaims;
 }

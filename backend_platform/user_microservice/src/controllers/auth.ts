@@ -7,15 +7,11 @@ import type { PasswordResetConfirmInput, PasswordResetRequestInput, SignupData, 
 
 
 export async function signup(request: Request, response: Response): Promise<void> {
-  if (typeof request.body.data === 'string') {
-    try {
-      request.body = JSON.parse(request.body.data);
-    } catch {
-      response.status(400).json({ error: 'Invalid signup data' });
-      return;
-    }
+  if (!request.file) {
+    response.status(400).json({ error: 'Avatar image is required' });
+    return;
   }
-  const avatarUrl = request.file ? await upload(request.file) : '';
+  const avatarUrl = await upload(request.file);
   const user = await signUp({ ...(request.body as SignupData), avatarUrl });
 
   if (!user) {
@@ -24,7 +20,7 @@ export async function signup(request: Request, response: Response): Promise<void
   }
 
   response.status(201).json({
-    user: user,
+    user: toAuthUser(user),
     token: createToken({sub: String(user.id),email: user.email,username: user.username,pLevel: user.playerLevel,}, 60 * 60 * 24),
   });
 }
@@ -37,9 +33,29 @@ export async function signin(request: Request, response: Response): Promise<void
   }
 
   response.json({
-    user: user,
+    user: toAuthUser(user),
     token: createToken({ sub: String(user.id),email: user.email,username: user.username, pLevel: user.playerLevel}, 60 * 60 * 24),
   });
+}
+
+function toAuthUser(user: {
+  id: number;
+  email: string;
+  username: string;
+  playerLevel: string;
+  bio: string;
+  totalScore: number;
+  createdAt: Date;
+}) {
+  return {
+    id: String(user.id),
+    email: user.email,
+    username: user.username,
+    p_level: user.playerLevel,
+    bio: user.bio,
+    total_score: user.totalScore,
+    createdAt: user.createdAt,
+  };
 }
 
 export async function requestPasswordReset(request: Request,response: Response): Promise<void> {
