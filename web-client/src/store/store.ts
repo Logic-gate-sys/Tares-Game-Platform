@@ -1,16 +1,16 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { socketMiddleware } from "./middleware";
 import lobbyReducer from "./slices/lobby";
-import gameReduer from './slices/lobby'
+import arenaReducer from './slices/arena'
 import { baseApi } from "./services/baseApi";
-import authSlice  from "./slices/auth";
+import authReducer  from "./slices/auth";
 
 
 export const store = configureStore({
   reducer: {
-    auth: authSlice,
+    auth: authReducer,
     lobby: lobbyReducer,
-    ingame: gameReduer,
+    arena: arenaReducer,
     [baseApi.reducerPath]: baseApi.reducer,
   },
   middleware: (middleware) => middleware().concat(baseApi.middleware, socketMiddleware()),

@@ -23,7 +23,7 @@ const initGameState: GameState = {
 
 export const gameSlice = createSlice({
   // state
-  name: 'game',
+  name: 'arena',
   initialState: initGameState,
   reducers: {
     setScramble: (state, action: PayloadAction<GameState['scramble']>) => {
@@ -31,9 +31,13 @@ export const gameSlice = createSlice({
     },
     changeStatus: (state, action: PayloadAction<GameState['status']>) => {
       state.status = action.payload;
+      console.log("STATUS: ", action.payload)
     },
     setRoomId: (state, action: PayloadAction<GameState['roomId']>) => {
       state.roomId = action.payload;
+    },
+    setRoom: (state, action: PayloadAction<GameState['room']>) => {
+      state.room = action.payload;
     },
 
     setTimer: (state, action: PayloadAction<GameState['timer']>) => {
@@ -52,5 +56,5 @@ export const gameSlice = createSlice({
   }
 })
 
-export const { setScramble, changeStatus, setRoomId, setTimer, setRound, setPlayers, setScores, sendWord } = gameSlice.actions;
+export const { setScramble, changeStatus, setRoom, setRoomId, setTimer, setRound, setPlayers, setScores, sendWord } = gameSlice.actions;
 export default gameSlice.reducer;
