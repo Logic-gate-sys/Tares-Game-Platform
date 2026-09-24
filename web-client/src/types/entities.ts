@@ -17,6 +17,8 @@ export type Room = {
 // join request 
 export type Request = {
   id?: string;
+  roomId?: string;
+  requesterId?: number;
   petitionNumber?: string;
   timeAgo?: string;
   expiresIn?: string;

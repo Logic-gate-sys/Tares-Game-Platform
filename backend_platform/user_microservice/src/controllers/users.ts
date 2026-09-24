@@ -25,11 +25,32 @@ export async function stats(request: Request, response: Response): Promise<void>
     response.status(404).json({ error: 'User not found' });
     return;
   }
-  response.json({
+  response.json(toStats(user));
+}
+
+export async function statsById(request: Request, response: Response): Promise<void> {
+  const user = await findUserById(Number(request.params.id));
+  if (!user) {
+    response.status(404).json({ error: 'User not found' });
+    return;
+  }
+  response.json(toStats(user));
+}
+
+function toStats(user: {
+  playerLevel: string;
+  rank: string;
+  totalScore: number;
+  wins: number;
+  accuracy: number;
+}) {
+  return {
     playerLevel: user.playerLevel,
     rank: user.rank,
     totalScore: user.totalScore,
-  });
+    wins: user.wins,
+    accuracy: user.accuracy,
+  };
 }
 
 export async function byId(request: Request, response: Response): Promise<void> {

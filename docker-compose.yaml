@@ -67,6 +67,7 @@ services:
       WSS_PORT: 8081
       DATABASE_URL: postgresql://${GAME_DB_USER:-tares_game}:${GAME_DB_PASSWORD:-tares_game_dev_password}@game-db:5432/${GAME_DB_NAME:-tares_game}?sslmode=disable
       AUTH_SECRET: ${AUTH_SECRET:-development-only-change-this-secret-to-a-long-random-value}
+      USER_SERVICE_URL: http://user-service:3000
     depends_on:
       game-db:
         condition: service_healthy

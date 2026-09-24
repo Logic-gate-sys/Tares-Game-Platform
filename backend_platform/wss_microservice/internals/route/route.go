@@ -1,19 +1,26 @@
 package route
 
 import (
+	"fmt"
+	"net/http"
+	"os"
+	"strings"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/logic-gate-sys/tares-cli/internals/app"
 	"github.com/logic-gate-sys/tares-cli/internals/ws"
-	"net/http"
 )
 
 func SetupRoute(app *app.Application) *chi.Mux {
 	router := chi.NewRouter()
 	// 2. Configure and inject CORS middleware at the root level
+	allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
+	if len(strings.Split(allowedOrigins, ","))<1{
+	  fmt.Println("Invalid allowed origins")
+	}
+	origins := strings.Split(allowedOrigins, ",")
 	router.Use(cors.Handler(cors.Options{
-		// AllowedOrigins:   []string{"https://foo.com"}, // Use this for production
-		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:5174"},
+		AllowedOrigins:   origins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},

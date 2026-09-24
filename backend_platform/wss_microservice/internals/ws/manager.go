@@ -6,14 +6,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 	"time"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/logic-gate-sys/tares-cli/internals/engine"
 	"github.com/logic-gate-sys/tares-cli/internals/events"
 	"github.com/logic-gate-sys/tares-cli/internals/middleware"
 	"github.com/logic-gate-sys/tares-cli/internals/store"
+	"github.com/logic-gate-sys/tares-cli/internals/timer"
 )
 
 type LobbyAction struct {
@@ -23,23 +26,33 @@ type LobbyAction struct {
 
 type roomManager struct {
 	sync.RWMutex
-	rooms        map[string]*PlayerRoom // map of all rooms in this manager
-	lobbyClients map[*client]bool       // all clients with no rooms yet
-	lobbyLeave   chan *client
-	lobbyJoin    chan *client // client with no room joins room manaer through this
-	lobbyInbound chan LobbyAction
-	roomStore    *store.PostGresRoomStore
-	runOnce      sync.Once
+	rooms          map[string]*PlayerRoom // map of all rooms in this manager
+	lobbyClients   map[*client]bool       // all clients with no rooms yet
+	lobbyLeave     chan *client
+	lobbyJoin      chan *client // client with no room joins room manaer through this
+	lobbyInbound   chan LobbyAction
+	roomStore      *store.PostGresRoomStore
+	pendingJoins   map[string]*pendingJoin
+	userServiceURL string
+	runOnce        sync.Once
+}
+
+type pendingJoin struct {
+	requester *client
+	roomID    string
+	ownerID   int
 }
 
 func NewRoomManager(roomStore *store.PostGresRoomStore) *roomManager {
 	return &roomManager{
-		rooms:        make(map[string]*PlayerRoom),
-		lobbyClients: make(map[*client]bool),
-		lobbyJoin:    make(chan *client),
-		lobbyLeave:   make(chan *client),
-		lobbyInbound: make(chan LobbyAction),
-		roomStore:    roomStore,
+		rooms:          make(map[string]*PlayerRoom),
+		lobbyClients:   make(map[*client]bool),
+		lobbyJoin:      make(chan *client),
+		lobbyLeave:     make(chan *client),
+		lobbyInbound:   make(chan LobbyAction),
+		roomStore:      roomStore,
+		pendingJoins:   make(map[string]*pendingJoin),
+		userServiceURL: os.Getenv("USER_SERVICE_URL"),
 	}
 }
 
@@ -130,12 +143,11 @@ func (rm *roomManager) Run() {
 				}
 
 				// incase user wants to join an available room
-				// TODO: Sent message to room owner of the join request
+				//  Sent message to room owner of the join request
 				// wait for the owner to resolve request or fail request after x-minutes waiting
 
 			// when room join request is sent
 			case events.JoinRoom:
-				// payload struct
 				var payload struct {
 					RoomId string `json:"roomId"`
 					Name   string `json:"playerName"`
@@ -150,26 +162,48 @@ func (rm *roomManager) Run() {
 					log.Println("Error(wss): ", err.Error())
 					break
 				}
-
-				// formated pertion
+				ownerID, parseErr := strconv.Atoi(room.OwnerId)
+				if parseErr != nil {
+					break
+				}
+				if action.Client.userId == ownerID {
+					if err := rm.joinRoom(action.Client, room); err != nil {
+						log.Println("Owner failed to join room:", err)
+					}
+					log.Println("<<:::Owner joined his/her room")
+					break
+				}
+				stats, err := loadUserStats(context.Background(), rm.userServiceURL, action.Client.userId)
+				if err != nil {
+					log.Println("Failed to load requester stats:", err)
+					action.Client.inLobbyToClientEvent <- events.LobbyStateBroadcast{
+						Which: events.JoinResponse,
+						Data:  map[string]any{"accepted": false, "reason": "Player statistics are temporarily unavailable"},
+					}
+					break
+				}
 				petition := events.PetitionRequest{
 					ID:             uuid.New().String(),
+					RoomID:         payload.RoomId,
+					RequesterID:    action.Client.userId,
 					PetitionNumber: fmt.Sprintf("Req:%s", uuid.New()),
 					CreatedAt:      time.Now(),
 					PlayerName:     payload.Name,
 					PlayerLevel:    payload.Level,
-					// TODO: Find actual scores instead of place-holders
 					Stats: &events.PetitionStats{
-						Wins:     30,
-						Accuracy: 89,
-						Ping:     400,
+						Wins:     stats.Wins,
+						Accuracy: stats.Accuracy,
+						Ping:     action.Client.Ping(),
 					},
 				}
 
-				// notifier room owner of request
-				for client, _ := range rm.lobbyClients {
-					ownerID, parseErr := strconv.Atoi(room.OwnerId)
-					if parseErr == nil && client.userId == ownerID {
+				rm.pendingJoins[petition.ID] = &pendingJoin{
+					requester: action.Client,
+					roomID:    payload.RoomId,
+					ownerID:   ownerID,
+				}
+				for client := range rm.lobbyClients {
+					if client.userId == ownerID {
 						client.inLobbyToClientEvent <- events.LobbyStateBroadcast{
 							Which:   events.IncomingJoinRequest,
 							Data:    petition,
@@ -178,9 +212,80 @@ func (rm *roomManager) Run() {
 						break
 					}
 				}
+			case events.ResolveJoin:
+				var payload struct {
+					RequestID string `json:"requestId"`
+					Accepted  bool   `json:"accepted"`
+				}
+				if err := json.Unmarshal(action.Action.Value, &payload); err != nil {
+					break
+				}
+				pending, ok := rm.pendingJoins[payload.RequestID]
+				if !ok || action.Client.userId != pending.ownerID {
+					break
+				}
+				delete(rm.pendingJoins, payload.RequestID)
+				if !payload.Accepted {
+					pending.requester.inLobbyToClientEvent <- events.LobbyStateBroadcast{
+						Which: events.JoinResponse,
+						Data:  map[string]any{"accepted": false, "reason": "Room owner rejected the request"},
+					}
+					break
+				}
+				room, err := rm.roomStore.GetRoomById(context.Background(), pending.roomID)
+				if err != nil {
+					break
+				}
+				if err := rm.joinRoom(pending.requester, room); err != nil {
+					pending.requester.inLobbyToClientEvent <- events.LobbyStateBroadcast{
+						Which: events.JoinResponse,
+						Data:  map[string]any{"accepted": false, "reason": err.Error()},
+					}
+					break
+				}
 			}
 		}
 	}
+}
+
+func (rm *roomManager) joinRoom(c *client, room store.RoomViewModel) error {
+	if room.Capacity > 0 && rm.rooms[room.ID] != nil && len(rm.rooms[room.ID].Clients) >= room.Capacity {
+		return fmt.Errorf("room is full")
+	}
+	playerRoom := rm.rooms[room.ID]
+	if playerRoom == nil {
+		ownerID, err := strconv.Atoi(room.OwnerId)
+		if err != nil {
+			return err
+		}
+		playerRoom = &PlayerRoom{
+			Room: store.CreateRoom{
+				Id: room.ID, OwnerId: ownerID, Name: room.Name, Capacity: room.Capacity,
+				Status: store.Status(room.Status), Icon: room.Icon, IconBgClass: room.IconBgClass,
+				IconTextColorClass: room.IconTextColorClass,
+			},
+			Timer:          timer.GameClock{},
+			Clients:        make(map[*client]bool),
+			inboundEvents:  make(chan events.IngameUserAction),
+			outBoundEvents: make(chan events.GameStateBroadcast),
+			join:           make(chan *client),
+			leave:          make(chan *client),
+			gameEngine:     engine.NewGame(room.ID),
+			startGame:      make(chan bool),
+			stopGame:       make(chan bool),
+			pauseGame:      make(chan bool),
+		}
+		rm.rooms[room.ID] = playerRoom
+		go playerRoom.Run()
+	}
+	c.room = playerRoom
+	playerRoom.Clients[c] = true
+	delete(rm.lobbyClients, c)
+	c.inLobbyToClientEvent <- events.LobbyStateBroadcast{
+		Which: events.JoinResponse,
+		Data:  map[string]any{"accepted": true, "room": room},
+	}
+	return nil
 }
 
 var (

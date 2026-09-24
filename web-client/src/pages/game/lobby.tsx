@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CreateRoomModal } from '#components/form-modals';
 import { useDispatch, useSelector } from 'react-redux';
@@ -12,7 +12,6 @@ import { SettingsModal } from '#components/game/roomSettingModal';
 import { useUI } from '#context/uiContext';
 import { Loader } from '#components/ui/loader';
 import { PetitionCard } from '#components/ui/petition';
-import { changeStatus, setRoom, setRoomId } from '#store/slices/arena'
 
 
 
@@ -80,12 +79,12 @@ const petitionData = [
   },
 ];
 
-
 export function Lobby() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { availableRooms, inComingRequests } = useSelector((state: RootState) => state.lobby)
   const authState = useSelector((state: RootState) => state.auth);
+  const arenaState = useSelector((state: RootState) => state.arena);
   const { showNotice } = useUI();
   // RTK QUERY & MUTATION FLAGS
   const [createRoom, { isLoading: isCreating }] = useCreateRoomMutation();
@@ -137,8 +136,8 @@ export function Lobby() {
     }
   }
   // handle sending join requests
-  const handleRoomJoinRequest = async (e: React.MouseEvent, roomId: string) => {
-    e.preventDefault();
+  const handleRoomJoinRequest = async (e: React.MouseEvent | undefined, roomId: string) => {
+    e?.preventDefault();
     if (!roomId) return;
     try {
       if (!authState.user) return;
@@ -151,18 +150,29 @@ export function Lobby() {
   }
 
   const handleEnterOwnRoom = (room: Room) => {
-    dispatch(setRoom(room));
-    dispatch(setRoomId(room.id));
-    dispatch(changeStatus("room:in"));
-    // attemp going into the room 
-    navigate("/game/arena"); // later: navigate by unique id
+    handleRoomJoinRequest(undefined, room.id);
   };
 
   // Sync HANDLERS
   const handlePetitionAction = (id: string, actionType: 'resolved' | 'rejected') => {
-    console.log(`Action: ${actionType} on petition ID: ${id}`);
+    const request = inComingRequests.find((item) => item.id === id);
+    if (request) {
+      dispatch(pushToLobby({
+        type: 'in:lobby',
+        payload: {
+          action: 'room:join:resolve',
+          value: { requestId: id, accepted: actionType === 'resolved' },
+        },
+      }));
+    }
     dispatch(updateRequests({ id }));
   };
+
+  useEffect(() => {
+    if (arenaState.status === "room:in" && arenaState.room) {
+      navigate("/game/arena");
+    }
+  }, [arenaState.room, arenaState.status, navigate]);
 
 
 

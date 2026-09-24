@@ -29,6 +29,8 @@ export async function signUp(data: SignupData): Promise<StoredUser | undefined> 
       rank: data.rank ?? 'unranked',
       bio: data.bio ?? '',
       totalScore: 0,
+      wins: 0,
+      accuracy: 0,
       avatarUrl: data.avatarUrl,
       bgClass: data.bgClass ?? '',
     })
