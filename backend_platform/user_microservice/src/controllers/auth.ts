@@ -21,7 +21,7 @@ export async function signup(request: Request, response: Response): Promise<void
 
   response.status(201).json({
     user: toAuthUser(user),
-    token: createToken({sub: String(user.id),email: user.email,username: user.username,pLevel: user.playerLevel,}, 60 * 60 * 24),
+    token: createToken({sub: String(user.id),email: user.email,username: user.username,pLevel: user.playerLevel,}, 60 * 60 * 24)
   });
 }
 

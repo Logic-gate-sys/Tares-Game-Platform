@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useEffect } from "react";
-import type { LoginRequest, SignupRequest } from "#types/type";
+import type { LoginRequest } from "#types/type";
 import { Eye, EyeOff } from 'lucide-react';
 import { Footer } from "#components/footer";
 import { Outlet } from "react-router-dom";
@@ -73,16 +73,10 @@ export function AuthGate() {
         alert("An avatar image is required");
         return;
       }
-      const signupData: SignupRequest = {
-        email,
-        username,
-        password: { plain_text: password }
-      };
-
       const formdata = new FormData();
-      formdata.append("data", JSON.stringify(signupData));
-
-      // Append actual File object if selected
+      formdata.append("email", email);
+      formdata.append("username", username);
+      formdata.append("password", password);
       formdata.append("avatar", avatarFile);
       try {
         await signUp(formdata).unwrap();
