@@ -9,9 +9,9 @@ export function ArenaGate() {
 
   if (status ==="room:in") {
     return (
-      <div className="h-fit">
+      <>
         <Outlet />
-      </div>);
+      </>);
   }
   return (<><Lobby /></>)
 }

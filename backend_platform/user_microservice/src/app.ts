@@ -6,6 +6,8 @@ import userRoutes from '#routes/users';
 import cors from 'cors';
 import { env } from './environment.ts';
 
+
+
 const app = express();
 const allowedOrigins = env.ALLOWED_ORIGINS;
 
