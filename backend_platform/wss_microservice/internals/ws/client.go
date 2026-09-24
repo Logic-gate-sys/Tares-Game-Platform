@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/logic-gate-sys/tares-cli/internals/events"
+	"sync/atomic"
+	"time"
 )
 
 // Holds the state of any connected device (e.g browser, terminal) at any time
@@ -16,6 +18,12 @@ type client struct {
 	inGameToClientEvent  chan events.GameStateBroadcast //messages going from server to client
 	room                 *PlayerRoom
 	manager              *roomManager
+	pingStartedAt        atomic.Int64
+	pingMilliseconds     atomic.Int64
+}
+
+func (c *client) Ping() int {
+	return int(c.pingMilliseconds.Load())
 }
 
 // Take message in clients inbound channel and shovel it down to connected client sockect connection e.g browser
@@ -23,9 +31,16 @@ func (c *client) writeToClientPump() {
 	defer func() {
 		c.socket.Close()
 	}()
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
 	// sent all inbound events through socket
 	for {
 		select {
+		case <-ticker.C:
+			c.pingStartedAt.Store(time.Now().UnixNano())
+			if err := c.socket.WriteControl(websocket.PingMessage, nil, time.Now().Add(2*time.Second)); err != nil {
+				return
+			}
 		case event, ok := <-c.inGameToClientEvent:
 			// if manager closed in game to client channel
 			if !ok {
@@ -83,6 +98,13 @@ func (c *client) readFromClientPump() {
 	defer func() {
 		c.socket.Close()
 	}()
+	c.socket.SetPongHandler(func(string) error {
+		startedAt := c.pingStartedAt.Load()
+		if startedAt > 0 {
+			c.pingMilliseconds.Store(time.Since(time.Unix(0, startedAt)).Milliseconds())
+		}
+		return nil
+	})
 	for {
 		//blocks until a message arrives
 		messageType, reader, err := c.socket.NextReader()

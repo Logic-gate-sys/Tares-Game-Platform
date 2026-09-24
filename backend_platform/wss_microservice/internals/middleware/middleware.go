@@ -17,13 +17,10 @@ type AuthUser struct {
 	Username    string
 	PlayerLevel string
 }
-
 type UserMiddleware struct {
 	secret []byte
 }
-
 type userKey string
-
 const contextUserKey userKey = "user"
 
 func NewUserMiddleware() (*UserMiddleware, error) {
@@ -55,6 +52,7 @@ func (um *UserMiddleware) Authenticate(next http.Handler) http.Handler {
 			utils.WriteJSON(w, http.StatusUnauthorized, utils.Envlope{"error": "Invalid or expired token"})
 			return
 		}
+		// next method 
 		next.ServeHTTP(w, SetUser(r, user))
 	})
 }
@@ -67,6 +65,7 @@ func bearerOrQueryToken(r *http.Request) (string, bool) {
 		}
 		return parts[1], true
 	}
+	// incase tokne is in the query string 
 	token := r.URL.Query().Get("token")
 	return token, token != ""
 }

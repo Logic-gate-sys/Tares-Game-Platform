@@ -8,10 +8,11 @@ import (
 type lobbyAction string
 
 const (
-	CreateRoom lobbyAction = "room:create"
-	LeaveRoom  lobbyAction = "room:leave"
-	UpdateRoom lobbyAction = "room:update"
-	JoinRoom   lobbyAction = "request:room:join"
+	CreateRoom  lobbyAction = "room:create"
+	LeaveRoom   lobbyAction = "room:leave"
+	UpdateRoom  lobbyAction = "room:update"
+	JoinRoom    lobbyAction = "request:room:join"
+	ResolveJoin lobbyAction = "room:join:resolve"
 )
 
 type GameRoomAction string
@@ -61,6 +62,7 @@ const (
 	NewRoom             Which = "rooms:new"
 	UpdatedRoom         Which = "rooms:update"
 	IncomingJoinRequest Which = "incoming:join:request"
+	JoinResponse        Which = "rooms:join:response"
 )
 
 type LobbyStateBroadcast struct {
@@ -100,6 +102,8 @@ type PetitionStats struct {
 
 type PetitionRequest struct {
 	ID             string         `json:"id,omitempty"`
+	RoomID         string         `json:"roomId,omitempty"`
+	RequesterID    int            `json:"requesterId,omitempty"`
 	PetitionNumber string         `json:"petitionNumber,omitempty"` // generated on the fly
 	Duration       time.Duration  `json:"duration,omitempty"`
 	PlayerName     string         `json:"playerName,omitempty"`

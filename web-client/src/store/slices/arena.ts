@@ -31,7 +31,6 @@ export const gameSlice = createSlice({
     },
     changeStatus: (state, action: PayloadAction<GameState['status']>) => {
       state.status = action.payload;
-      console.log("STATUS: ", action.payload)
     },
     setRoomId: (state, action: PayloadAction<GameState['roomId']>) => {
       state.roomId = action.payload;

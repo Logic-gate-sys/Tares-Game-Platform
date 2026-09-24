@@ -1,6 +1,6 @@
 import { type Middleware } from "@reduxjs/toolkit";
 import { addMessage, addRequest, addRoom,updateRoom, changeSocketStatus, lobbySlice, removeRoom, setAvailableRooms } from "./slices/lobby"
-import { gameSlice } from "./slices/arena";
+import { changeStatus, gameSlice, setRoom, setRoomId } from "./slices/arena";
 import type { ServerMessage } from "#types/messages";
 import type { Room, Request } from "#types/entities";
 
@@ -44,6 +44,17 @@ export const socketMiddleware = (): Middleware => {
             if (res.payload.which === "incoming:join:request") {
               store.dispatch(addRequest(res.payload.data as Request));
               store.dispatch(addMessage(res.payload.message))
+              break;
+            }
+            if (res.payload.which === "rooms:join:response") {
+              const response = res.payload.data;
+              if (response.accepted && response.room) {
+                store.dispatch(setRoom(response.room));
+                store.dispatch(setRoomId(response.room.id));
+                store.dispatch(changeStatus("room:in"));
+              } else {
+                store.dispatch(addMessage(response.reason ?? "Room join request rejected"));
+              }
               break;
             }
 
