@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CreateRoomModal } from '#components/form-modals';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from 'src/store/store';
@@ -11,6 +12,7 @@ import { SettingsModal } from '#components/game/roomSettingModal';
 import { useUI } from '#context/uiContext';
 import { Loader } from '#components/ui/loader';
 import { PetitionCard } from '#components/ui/petition';
+import { changeStatus, setRoom, setRoomId } from '#store/slices/arena'
 
 
 
@@ -81,6 +83,7 @@ const petitionData = [
 
 export function Lobby() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { availableRooms, inComingRequests } = useSelector((state: RootState) => state.lobby)
   const authState = useSelector((state: RootState) => state.auth);
   const { showNotice } = useUI();
@@ -134,18 +137,26 @@ export function Lobby() {
     }
   }
   // handle sending join requests
-  const handleRoomJoinRequest = async (e) => {
+  const handleRoomJoinRequest = async (e: React.MouseEvent, roomId: string) => {
     e.preventDefault();
-    if (selectedRooId) return;
+    if (!roomId) return;
     try {
       if (!authState.user) return;
-      dispatch(pushToLobby({ type: 'in:lobby', payload: { action: "request:room:join", value: { roomId: selectedRooId, playerName: authState.user.username ?? '', playerLever: authState.user.p_level ?? '1'} } }));
+      dispatch(pushToLobby({ type: 'in:lobby', payload: { action: "request:room:join", value: { roomId, playerName: authState.user.username ?? '', playerLevel: authState.user.p_level ?? '1' } } }));
       showNotice("Success", "Request sent to room owner, please wait while your request is processed...")
     } catch (err) {
       console.error(err)
       showNotice("Error", "Request to join room failed")
     }
   }
+
+  const handleEnterOwnRoom = (room: Room) => {
+    dispatch(setRoom(room));
+    dispatch(setRoomId(room.id));
+    dispatch(changeStatus("room:in"));
+    // attemp going into the room 
+    navigate("/game/arena"); // later: navigate by unique id
+  };
 
   // Sync HANDLERS
   const handlePetitionAction = (id: string, actionType: 'resolved' | 'rejected') => {
@@ -248,7 +259,8 @@ export function Lobby() {
               {availableRooms.map((arena, idx) => {
                 return <div key={idx} onClick={() => setSelectedRoomId(arena.id)}>
                   <RoomCard data={arena} playerId={authState.user?.id}
-                    onJoin={handleRoomJoinRequest}
+                    onJoin={(event) => handleRoomJoinRequest(event, arena.id)}
+                    onEnterOwnRoom={() => handleEnterOwnRoom(arena)}
                     onOpenDelete={() => setOpenDelete(true)}
                     onOpenSettings={() => setOpenRoomSettings(true)}
                   />

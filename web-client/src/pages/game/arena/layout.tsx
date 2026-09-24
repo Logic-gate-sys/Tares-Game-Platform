@@ -5,14 +5,13 @@ import { Outlet } from "react-router-dom";
 
 
 export function ArenaGate() {
-  const { status } = useSelector((state: RootState) => state.ingame);
-
+  const { status } = useSelector((state: RootState) => state.arena);
 
   if (status ==="room:in") {
     return (
-      <>
+      <div className="h-fit">
         <Outlet />
-      </>);
+      </div>);
   }
   return (<><Lobby /></>)
 }

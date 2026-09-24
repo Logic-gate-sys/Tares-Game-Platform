@@ -99,7 +99,7 @@ export function AuthGate() {
 
   return (
     <div className=" bg-background h-full text-on-background min-h-screen flex flex-col font-body-md overflow-x-hidden">
-      {state.status === "is-loading" && <Loader progress={state.progress} />}
+      {state.status === "is-loading" && <Loader isLoading={state.status==="is-loading"} />}
       {state.status === "error" &&
         <MessageBox title={"Auth Error!"} message={(state.error ?? "Authentication failed").split(".")} onClose={() => dispatch(clearAuthMessage())} onContinue={() => dispatch(clearAuthMessage())} />}
       {state.message &&

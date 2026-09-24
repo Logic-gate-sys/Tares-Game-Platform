@@ -18,17 +18,15 @@ export type RoomData = {
 export type Props = {
   data: RoomData,
   playerId: string;
-  onJoin?: () => void;
+  onJoin?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onOpenSettings?: () => void;
   onOpenDelete?: () => void;
   onToggleStatus?: () => void;
+  onEnterOwnRoom?: () => void;
 }
 
-export const RoomCard = ({ data, playerId, onJoin, onOpenSettings, onOpenDelete, onToggleStatus }: Props) => {
+export const RoomCard = ({ data, playerId, onJoin,onEnterOwnRoom, onOpenSettings, onOpenDelete, onToggleStatus }: Props) => {
   const isOwner = (playerId == data.ownerId) ? true : false;
-  console.log("playerId: ", playerId);
-  console.log("OwnerId: ", data?.ownerId);
-  console.log("ISOWNER: ", isOwner);
 
   return (
     <div className="bg-paper-white border-4 border-deep-ink p-6 neubrutalism-shadow-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(18,23,33,1)] transition-all group">
@@ -65,10 +63,10 @@ export const RoomCard = ({ data, playerId, onJoin, onOpenSettings, onOpenDelete,
             )}
           </div>
           <button
-            onClick={onJoin}
+            onClick={isOwner? onEnterOwnRoom: onJoin}
             className="flex-1 md:flex-none px-6 py-2 bg-sky-blue border-2 border-deep-ink font-label-bold text-deep-ink group-hover:bg-action-red group-hover:text-paper-white transition-colors"
           >
-            JOIN ARENA
+            {isOwner ? "ENTER ROOM" : "REQUEST TO JOIN"}
           </button>
         </div>
       </div>
