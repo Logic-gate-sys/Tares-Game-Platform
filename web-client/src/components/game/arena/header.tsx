@@ -1,5 +1,5 @@
 
-export const Header = ({ messages}: {messages?:number}) => {
+export const Header = ({ messages, onShowMsg}: {messages?:number, onShowMsg?: ()=> void}) => {
   return (
     <header className="bg-surface border-b-4 border-deep-ink shadow-[4px_4px_0px_0px_rgba(18,23,33,1)] flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop h-20 z-50 sticky top-0">
       <div className="text-headline-lg font-headline-lg text-primary tracking-tight">Tares</div>
@@ -26,7 +26,9 @@ export const Header = ({ messages}: {messages?:number}) => {
               {messages>5? '5+': messages}
             </div>}
 
-            <button className="material-symbols-outlined text-deep-ink hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all p-2 bg-paper-white border-2 border-deep-ink neubrutal-shadow-sm">
+            <button className="material-symbols-outlined text-deep-ink hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all p-2 bg-paper-white border-2 border-deep-ink neubrutal-shadow-sm"
+            onClick={onShowMsg}
+            >
               message
             </button>
           </div>

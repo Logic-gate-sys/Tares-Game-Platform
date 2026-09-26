@@ -108,9 +108,11 @@ type PetitionRequest struct {
 	Duration       time.Duration  `json:"duration,omitempty"`
 	PlayerName     string         `json:"playerName,omitempty"`
 	PlayerLevel    string         `json:"playerLevel,omitempty"`
+	PlayerRank     string         `json:"playerRank,omitempty"`
 	Stats          *PetitionStats `json:"stats,omitempty"`
 	TargetRoom     string         `json:"targetRoom,omitempty"`
 	HostBypass     string         `json:"hostBypass,omitempty"`
 	Status         string         `json:"status"`
 	CreatedAt      time.Time      `json:"createdAt"` // keep when it's generated and get time ago in frontend
 }
+

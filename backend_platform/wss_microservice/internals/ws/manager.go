@@ -12,11 +12,12 @@ import (
 	"time"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/logic-gate-sys/tares-cli/internals/engine"
-	"github.com/logic-gate-sys/tares-cli/internals/events"
-	"github.com/logic-gate-sys/tares-cli/internals/middleware"
-	"github.com/logic-gate-sys/tares-cli/internals/store"
-	"github.com/logic-gate-sys/tares-cli/internals/timer"
+	"github.com/logic-gate-sys/wss_service/internals/engine"
+	"github.com/logic-gate-sys/wss_service/internals/events"
+	"github.com/logic-gate-sys/wss_service/internals/grpc"
+	"github.com/logic-gate-sys/wss_service/internals/middleware"
+	"github.com/logic-gate-sys/wss_service/internals/store"
+	"github.com/logic-gate-sys/wss_service/internals/timer"
 )
 
 type LobbyAction struct {
@@ -26,6 +27,7 @@ type LobbyAction struct {
 
 type roomManager struct {
 	sync.RWMutex
+	grpcClient     *grpc.UserGRPCClient
 	rooms          map[string]*PlayerRoom // map of all rooms in this manager
 	lobbyClients   map[*client]bool       // all clients with no rooms yet
 	lobbyLeave     chan *client
@@ -43,8 +45,9 @@ type pendingJoin struct {
 	ownerID   int
 }
 
-func NewRoomManager(roomStore *store.PostGresRoomStore) *roomManager {
+func NewRoomManager(roomStore *store.PostGresRoomStore, grpcClient *grpc.UserGRPCClient) *roomManager {
 	return &roomManager{
+		grpcClient:     grpcClient,
 		rooms:          make(map[string]*PlayerRoom),
 		lobbyClients:   make(map[*client]bool),
 		lobbyJoin:      make(chan *client),
@@ -149,9 +152,8 @@ func (rm *roomManager) Run() {
 			// when room join request is sent
 			case events.JoinRoom:
 				var payload struct {
-					RoomId string `json:"roomId"`
-					Name   string `json:"playerName"`
-					Level  string `json:"playerLevel"`
+					RoomId     string `json:"roomId"`
+					PlayerId   int    `json:"playerId"`
 				}
 				if err := json.Unmarshal(action.Action.Value, &payload); err != nil {
 					log.Printf("Failed unmarshall payload. Error: %v", err)
@@ -166,14 +168,14 @@ func (rm *roomManager) Run() {
 				if parseErr != nil {
 					break
 				}
-				if action.Client.userId == ownerID {
+				if action.Client.userId == int32(ownerID) {
 					if err := rm.joinRoom(action.Client, room); err != nil {
 						log.Println("Owner failed to join room:", err)
 					}
 					log.Println("<<:::Owner joined his/her room")
 					break
 				}
-				stats, err := loadUserStats(context.Background(), rm.userServiceURL, action.Client.userId)
+				stats,err := rm.grpcClient.GetUserStats(context.Background(), action.Client.userId)
 				if err != nil {
 					log.Println("Failed to load requester stats:", err)
 					action.Client.inLobbyToClientEvent <- events.LobbyStateBroadcast{
@@ -182,28 +184,29 @@ func (rm *roomManager) Run() {
 					}
 					break
 				}
+				// compute request details to send to room:0wner 
 				petition := events.PetitionRequest{
 					ID:             uuid.New().String(),
 					RoomID:         payload.RoomId,
-					RequesterID:    action.Client.userId,
+					RequesterID:    int(action.Client.userId),
 					PetitionNumber: fmt.Sprintf("Req:%s", uuid.New()),
 					CreatedAt:      time.Now(),
-					PlayerName:     payload.Name,
-					PlayerLevel:    payload.Level,
+					PlayerName:     stats.Name,
+					PlayerLevel:    stats.Level,
 					Stats: &events.PetitionStats{
-						Wins:     stats.Wins,
-						Accuracy: stats.Accuracy,
+						Wins:     int(stats.Stats.Wins),
+						Accuracy: stats.Stats.Accuracy,
 						Ping:     action.Client.Ping(),
 					},
 				}
-
+        // TODO: This may not be needed , but have to determine 
 				rm.pendingJoins[petition.ID] = &pendingJoin{
 					requester: action.Client,
 					roomID:    payload.RoomId,
 					ownerID:   ownerID,
 				}
 				for client := range rm.lobbyClients {
-					if client.userId == ownerID {
+					if client.userId == int32(ownerID) {
 						client.inLobbyToClientEvent <- events.LobbyStateBroadcast{
 							Which:   events.IncomingJoinRequest,
 							Data:    petition,
@@ -221,7 +224,7 @@ func (rm *roomManager) Run() {
 					break
 				}
 				pending, ok := rm.pendingJoins[payload.RequestID]
-				if !ok || action.Client.userId != pending.ownerID {
+				if !ok || action.Client.userId != int32(pending.ownerID) {
 					break
 				}
 				delete(rm.pendingJoins, payload.RequestID)
@@ -310,7 +313,7 @@ func (rm *roomManager) HandleWS(w http.ResponseWriter, r *http.Request) {
 	// Create client from authenticated user
 	client := &client{
 		name:                 user.Username,
-		userId:               user.ID,
+		userId:               int32(user.ID),
 		socket:               socket,
 		inLobbyToClientEvent: make(chan events.LobbyStateBroadcast),
 		manager:              rm,

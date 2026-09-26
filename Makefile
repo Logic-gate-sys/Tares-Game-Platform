@@ -11,7 +11,9 @@ help:
 		'  make logs          Follow compose logs' \
 		'  make lint          Run service linters' \
 		'  make test          Run backend and client tests' \
-		'  make clean         Remove generated build artifacts'
+		'  make clean         Remove generated build artifacts'\
+		'  make proto-go      Generate go protobuf in wss_microservice stub'\
+		'  make wss_go_tidy   Tidy go mods '
 
 install:
 	cd backend_platform/user_microservice && npm ci --legacy-peer-deps
@@ -20,6 +22,8 @@ install:
 
 dev:
 	cd web-client && npm run dev
+wss_go_tidy:
+	cd backend_platform/wss_microservice && go mod tidy
 
 down:
 	docker compose --profile dev --profile prod down
@@ -43,3 +47,12 @@ test-wss:
 
 clean:
 	rm -rf web-client/dist backend_platform/wss_microservice/tmp
+
+
+# gRPC
+proto-go:
+	@mkdir -p backend_platform/wss_microservice/pkg/userpb
+	protoc --proto_path=proto \
+		--go_out=backend_platform/wss_microservice/pkg/userpb --go_opt=paths=source_relative \
+		--go-grpc_out=backend_platform/wss_microservice/pkg/userpb --go-grpc_opt=paths=source_relative \
+		proto/user/v1/user.proto

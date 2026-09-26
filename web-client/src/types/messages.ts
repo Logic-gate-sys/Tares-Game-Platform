@@ -8,7 +8,7 @@ export type ClientMessage =
     type: `in:lobby`, payload:
     | { action: 'room:create', value: { name: string } } // sends message to socket
     | { action: 'room:update', value: { name: string } }
-    | { action: 'request:room:join', value: { roomId?: string, playerName?:string, playerLevel?: string } }
+    | { action: 'request:room:join', value: { roomId?: string, playerId?:number} }
     | { action: 'room:join:resolve', value: { requestId: string, accepted: boolean } }
     | { action: 'room:leave', value: { roomId: string } }
   }

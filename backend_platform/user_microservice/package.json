@@ -41,6 +41,8 @@
     "#db/*": "./src/db/*.ts"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.14.5",
+    "@grpc/proto-loader": "^0.8.1",
     "@types/express": "^5.0.6",
     "@types/multer": "^2.2.0",
     "bcrypt": "^6.0.0",

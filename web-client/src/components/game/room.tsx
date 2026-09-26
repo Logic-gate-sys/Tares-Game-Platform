@@ -17,7 +17,7 @@ export type RoomData = {
 
 export type Props = {
   data: RoomData,
-  playerId: string;
+  playerId: number;
   onJoin?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onOpenSettings?: () => void;
   onOpenDelete?: () => void;

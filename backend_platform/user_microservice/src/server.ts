@@ -1,6 +1,7 @@
 import { app } from './app.ts';
 import { env } from './environment.ts';
 import { migrateDatabase } from '#db/migrate';
+import { startGrpcServer } from './grpc/server.ts';
 
 try {
   await migrateDatabase();
@@ -11,3 +12,6 @@ try {
   console.error('Failed to apply user database migrations', error);
   process.exitCode = 1;
 }
+
+// gRPC SERVER
+startGrpcServer("0.0.0.0:50051");

@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 	"github.com/go-chi/chi/v5"
-	"github.com/logic-gate-sys/tares-cli/internals/middleware"
-	"github.com/logic-gate-sys/tares-cli/internals/store"
-	"github.com/logic-gate-sys/tares-cli/internals/utils"
+	"github.com/logic-gate-sys/wss_service/internals/middleware"
+	"github.com/logic-gate-sys/wss_service/internals/store"
+	"github.com/logic-gate-sys/wss_service/internals/utils"
 )
 
 type RoomHandler struct {
