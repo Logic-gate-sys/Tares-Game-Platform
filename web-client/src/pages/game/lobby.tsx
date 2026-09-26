@@ -5,85 +5,20 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from 'src/store/store';
 import { type Room, type RoomCreateType } from '#types/entities';
 import { useCreateRoomMutation, useDeleteRoomMutation, useUpdateRoomMutation } from '#store/services/roomExtend';
-import { pushToLobby, updateRequests, } from '#store/slices/lobby'
+import { pushToLobby} from '#store/slices/lobby'
 import { RoomCard } from '#components/game/room';
 import { DeleteModal } from '#components/game/deleteModal';
 import { SettingsModal } from '#components/game/roomSettingModal';
 import { useUI } from '#context/uiContext';
 import { Loader } from '#components/ui/loader';
-import { PetitionCard } from '#components/ui/petition';
+import { changeStatus, setRoom } from '#store/slices/arena';
 
 
-
-// sample notification data
-// const petitionData = [
-//   {
-//     id: "1",
-//     petitionNumber: "REQ-9083",
-//     timeAgo: "1m",
-//     expiresIn: "01:12",
-//     playerName: "NOVA_GLITCH",
-//     playerLevel: 19,
-//     playerRank: "NOVICE",
-//     stats: { wins: 32, accuracy: 88.5, ping: 45 },
-//     targetRoom: "CYBERPUNK CITY",
-//     hostBypass: "NO",
-//   },
-//   {
-//     id: "2",
-//     petitionNumber: "REQ-9084",
-//     timeAgo: "3m",
-//     expiresIn: "00:58",
-//     playerName: "VOID_RUNNER",
-//     playerLevel: 41,
-//     playerRank: "VERIFIED",
-//     stats: { wins: 128, accuracy: 94.2, ping: 22 },
-//     targetRoom: "NEON DISTRICT",
-//     hostBypass: "YES",
-//   },
-//   {
-//     id: "3",
-//     petitionNumber: "REQ-9085",
-//     timeAgo: "7m",
-//     expiresIn: "02:34",
-//     playerName: "PIXEL_WARDEN",
-//     playerLevel: 27,
-//     playerRank: "NOVICE",
-//     stats: { wins: 54, accuracy: 81.7, ping: 67 },
-//     targetRoom: "SHADOW ARENA",
-//     hostBypass: "NO",
-//   },
-//   {
-//     id: "4",
-//     petitionNumber: "REQ-9086",
-//     timeAgo: "12m",
-//     expiresIn: "00:41",
-//     playerName: "ECHO_STRIKE",
-//     playerLevel: 58,
-//     playerRank: "VERIFIED",
-//     stats: { wins: 243, accuracy: 97.1, ping: 18 },
-//     targetRoom: "SKYLINE CORE",
-//     hostBypass: "YES",
-//   },
-//   {
-//     id: "5",
-//     petitionNumber: "REQ-9087",
-//     timeAgo: "25m",
-//     expiresIn: "03:09",
-//     playerName: "CRYPT_FOX",
-//     playerLevel: 33,
-//     playerRank: "NOVICE",
-//     stats: { wins: 89, accuracy: 90.3, ping: 39 },
-//     targetRoom: "GLITCH VAULT",
-//     hostBypass: "NO",
-//   },
-// ];
 
 export function Lobby() {
-  
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { availableRooms, inComingRequests, showMessages, message } = useSelector((state: RootState) => state.lobby)
+  const { availableRooms, message } = useSelector((state: RootState) => state.lobby)
   const authState = useSelector((state: RootState) => state.auth);
   const arenaState = useSelector((state: RootState) => state.arena);
   const { showNotice } = useUI();
@@ -155,24 +90,12 @@ export function Lobby() {
       showNotice("Error", "Request to join room failed")
     }
   }
-  const handleEnterOwnRoom = (room: Room) => {
-    handleRoomJoinRequest(undefined, room.id);
+  
+  const handleEnterOwnRoom = () => {
+    dispatch(changeStatus("room:in"));
+    dispatch(setRoom(selectedRoom));
   };
 
-  // Owner resolves  requestor's petition 
-  const handlePetitionAction = (id: string, actionType: 'resolved' | 'rejected') => {
-    const request = inComingRequests.find((item) => item.id === id);
-    if (request) {
-      dispatch(pushToLobby({
-        type: 'in:lobby',
-        payload: {
-          action: 'room:join:resolve',
-          value: { requestId: id, accepted: actionType === 'resolved' },
-        },
-      }));
-    }
-    dispatch(updateRequests({ id }));
-  };
 
   useEffect(() => {
     if (arenaState.status === "room:in" && arenaState.room) {
@@ -181,7 +104,7 @@ export function Lobby() {
     } else if (arenaState.status === "room:out") {
       showNotice("Notice", message);
     }
-  }, [arenaState.room, arenaState.status, navigate, showNotice,message]);
+  }, [arenaState.room, arenaState.status, navigate, showNotice, message]);
 
 
 
@@ -279,7 +202,7 @@ export function Lobby() {
                 return <div key={idx} onClick={() => setSelectedRoomId(arena.id)}>
                   <RoomCard data={arena} playerId={authState.user?.id}
                     onJoin={(event) => handleRoomJoinRequest(event, arena.id)}
-                    onEnterOwnRoom={() => handleEnterOwnRoom(arena)}
+                    onEnterOwnRoom={() => handleEnterOwnRoom()}
                     onOpenDelete={() => setOpenDelete(true)}
                     onOpenSettings={() => setOpenRoomSettings(true)}
                   />
@@ -333,48 +256,7 @@ export function Lobby() {
         {openRoomSettings && <SettingsModal room={selectedRoom} onClose={() => setOpenRoomSettings(false)} onSave={handleUpdateRoom} />}
 
         {/*--------------- PETITION MODAL STACK -----------------*/}
-        {inComingRequests.length > 0 && showMessages && (
-          <div className="fixed inset-0 z-99 flex items-center justify-center p-4 bg-deep-ink/40 backdrop-blur-md">
-            <div className="relative w-full max-w-2xl flex items-center justify-center min-h-75">
-
-              {inComingRequests.map((dt, index) => {
-                // Performance: Only render the top 4 cards visually
-                if (index > 3) return null;
-
-                // Dynamic styling based on the array index
-                const isFront = index === 0;
-                const scale = 1 - index * 0.05;
-                const translateY = index * 16;
-                const opacity = index === 0 ? 1 : 1 - index * 0.2;
-
-                return (
-                  <div
-                    key={dt.id}
-                    className="absolute w-full transition-all duration-300 ease-out shadow-2xl"
-                    style={{
-                      zIndex: 50 - index,
-                      transform: `translateY(${translateY}px) scale(${scale})`,
-                      opacity: opacity,
-                      transformOrigin: 'top',
-                      // 4. Critical: only the front card is clickable
-                      pointerEvents: isFront ? 'auto' : 'none',
-                    }}
-                  >
-                    {/* Re-added your animate-in wrapper for the initial pop-in */}
-                    <div className="animate-in fade-in zoom-in duration-200">
-                      <PetitionCard
-                        {...dt}
-                        // Connect to the handler to remove the card and reveal the next
-                        onReject={() => handlePetitionAction(dt.id, 'rejected')}
-                        onResolve={() => handlePetitionAction(dt.id, 'resolved')}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+       
 
       </main>
     </div>
