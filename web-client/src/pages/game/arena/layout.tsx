@@ -7,11 +7,9 @@ import { Outlet } from "react-router-dom";
 export function ArenaGate() {
   const { status } = useSelector((state: RootState) => state.arena);
 
-  if (status ==="room:in") {
+  if (status === "room:in") {
     return (
-      <>
-        <Outlet />
-      </>);
+      <> <Outlet /> </>);
   }
-  return (<><Lobby /></>)
+  return (<> <Lobby /></>)
 }
