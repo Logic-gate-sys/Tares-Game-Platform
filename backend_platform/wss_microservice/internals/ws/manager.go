@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/logic-gate-sys/wss_service/internals/engine"
@@ -152,8 +153,7 @@ func (rm *roomManager) Run() {
 			// when room join request is sent
 			case events.JoinRoom:
 				var payload struct {
-					RoomId     string `json:"roomId"`
-					PlayerId   int    `json:"playerId"`
+					RoomId string `json:"roomId"`
 				}
 				if err := json.Unmarshal(action.Action.Value, &payload); err != nil {
 					log.Printf("Failed unmarshall payload. Error: %v", err)
@@ -175,7 +175,7 @@ func (rm *roomManager) Run() {
 					log.Println("<<:::Owner joined his/her room")
 					break
 				}
-				stats,err := rm.grpcClient.GetUserStats(context.Background(), action.Client.userId)
+				stats, err := rm.grpcClient.GetUserStats(context.Background(), action.Client.userId)
 				if err != nil {
 					log.Println("Failed to load requester stats:", err)
 					action.Client.inLobbyToClientEvent <- events.LobbyStateBroadcast{
@@ -184,7 +184,7 @@ func (rm *roomManager) Run() {
 					}
 					break
 				}
-				// compute request details to send to room:0wner 
+				// compute request details to send to room:0wner
 				petition := events.PetitionRequest{
 					ID:             uuid.New().String(),
 					RoomID:         payload.RoomId,
@@ -199,7 +199,7 @@ func (rm *roomManager) Run() {
 						Ping:     action.Client.Ping(),
 					},
 				}
-        // TODO: This may not be needed , but have to determine 
+				// TODO: This may not be needed , but have to determine
 				rm.pendingJoins[petition.ID] = &pendingJoin{
 					requester: action.Client,
 					roomID:    payload.RoomId,
@@ -215,6 +215,7 @@ func (rm *roomManager) Run() {
 						break
 					}
 				}
+				
 			case events.ResolveJoin:
 				var payload struct {
 					RequestID string `json:"requestId"`
