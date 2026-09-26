@@ -7,7 +7,7 @@ export const roomApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     createRoom: builder.mutation<Room, RoomCreateType>({
       query: (createData) => ({
-        url: '/rooms',
+        url: '/api/v1/rooms',
         method: 'POST',
         body: createData,
       }),
@@ -18,7 +18,7 @@ export const roomApi = baseApi.injectEndpoints({
 
     deleteRoom: builder.mutation<void, {id: string}>({
       query: (data) => ({
-        url: `/rooms/${data.id}`,
+        url: `/api/v1/rooms/${data.id}`,
         method: 'DELETE',
       }),
 
@@ -26,7 +26,7 @@ export const roomApi = baseApi.injectEndpoints({
     }),
     updateRoom: builder.mutation <Room, Partial<Room>>({
       query: (data) => ({
-        url: `/rooms/${data.id}`,
+        url: `/api/v1/rooms/${data.id}`,
         method: 'PATCH',
         body: data
       }),
@@ -34,7 +34,7 @@ export const roomApi = baseApi.injectEndpoints({
     }),
 
     getRooms: builder.query<Room[], void>({
-      query: () => '/rooms', // auto defaults to GET
+      query: () => '/api/v1/rooms', // auto defaults to GET
       providesTags: ['Rooms']
       /* providesTags: (results) => results? [...results.map((id)=> ({type:'Room' as const, id:id})), //specific item tags
         {type:'Rooms', id:'LIST'}] // collection tag

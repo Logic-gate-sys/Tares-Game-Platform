@@ -7,7 +7,7 @@
     "scripts": {
         "dev": "concurrently --kill-others -n backend-compose,client -c magenta,green \"npm:start:backend\"  \"npm:dev:client\" ",
         "dev:client": "vite ",
-        "start:backend": "cd .. && docker compose --profile dev up --remove-orphans user-db game-db redis user-service wss-service dev-gateway",
+        "start:backend": "cd .. && docker compose --profile dev up --build --remove-orphans user-db game-db redis user-service wss-service dev-gateway",
         "test": "vitest run --coverage",
         "build": "tsc -b && vite build",
         "lint": "eslint . --fix",

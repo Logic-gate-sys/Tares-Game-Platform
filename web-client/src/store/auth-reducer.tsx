@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "start" });
     dispatch({ type: "progress", payload: { amount: 35 } })
     try {
-      const res = await apiClient.post<FormData>("/users/signup", data);
+      const res = await apiClient.post<FormData>("/api/v1/auth/signup", data);
       if (res.status >= 400) {
         dispatch({ type: "error", payload: { errorMsg: `Failed to signup: status ${res.status}` } });
         dispatch({ type: "progress", payload: { amount: 100 } })
@@ -137,7 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "start" });
     dispatch({ type: 'progress', payload: { amount: 35 } })
     try {
-      const res = await apiClient.post<LoginRequest>("/users/login", data);
+      const res = await apiClient.post<LoginRequest>("/api/v1/auth/login", data);
       if (res.status >= 400) {
         dispatch({ type: "error", payload: { errorMsg: `Failed to login: Status ${res.status}` } });
         dispatch({ type: "progress", payload: { amount: 100 } })
