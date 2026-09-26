@@ -6,7 +6,7 @@ import { authApi } from "#store/services/authExtend";
 
 export interface AuthState {
   user?: {
-    id: string;
+    id: number;
     email: string;
     username?: string;
     p_level?: string;

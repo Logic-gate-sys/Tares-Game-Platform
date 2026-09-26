@@ -5,10 +5,11 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
-	"github.com/logic-gate-sys/tares-cli/internals/app"
-	"github.com/logic-gate-sys/tares-cli/internals/ws"
+	"github.com/logic-gate-sys/wss_service/internals/app"
+	"github.com/logic-gate-sys/wss_service/internals/ws"
 )
 
 func SetupRoute(app *app.Application) *chi.Mux {
@@ -27,7 +28,7 @@ func SetupRoute(app *app.Application) *chi.Mux {
 		AllowCredentials: true, // for  HTTP-only cookies or auth headers
 		MaxAge:           300,  // Maximum value for Preflight request caching (in seconds)
 	}))
-	roomManager := ws.NewRoomManager(app.RoomHandler.RoomStore)
+	roomManager := ws.NewRoomManager(app.RoomHandler.RoomStore, app.GrpcClient)
 
 	// protected routes
 	router.Group(func(r chi.Router) {

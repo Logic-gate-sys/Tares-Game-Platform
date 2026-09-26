@@ -2,16 +2,19 @@ package app
 
 import (
 	"database/sql"
-	"github.com/logic-gate-sys/tares-cli/internals/api"
-	"github.com/logic-gate-sys/tares-cli/internals/middleware"
-	"github.com/logic-gate-sys/tares-cli/internals/migrations"
-	"github.com/logic-gate-sys/tares-cli/internals/store"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/logic-gate-sys/wss_service/internals/api"
+	"github.com/logic-gate-sys/wss_service/internals/grpc"
+	"github.com/logic-gate-sys/wss_service/internals/middleware"
+	"github.com/logic-gate-sys/wss_service/internals/migrations"
+	"github.com/logic-gate-sys/wss_service/internals/store"
 )
 
 type Application struct {
+	GrpcClient  *grpc.UserGRPCClient
 	Logger      *log.Logger
 	DB          *sql.DB
 	RoomHandler *api.RoomHandler
@@ -21,7 +24,7 @@ type Application struct {
 	}
 }
 
-func NewApplication() (*Application, error) {
+func NewApplication(client *grpc.UserGRPCClient) (*Application, error) {
 	//logger
 	logger := log.New(os.Stdout, " ", log.Ldate|log.Ltime)
 	db, err := store.Open()
@@ -45,6 +48,7 @@ func NewApplication() (*Application, error) {
 
 	//application
 	app := &Application{
+		GrpcClient: client,
 		Logger:      logger,
 		DB:          db,
 		RoomHandler: roomHandler,

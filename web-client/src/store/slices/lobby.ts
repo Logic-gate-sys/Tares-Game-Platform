@@ -9,19 +9,24 @@ export type LobbyState = {
   socketStatus:  "disconnected" | "idle" | "connecting" |"connected" |"error";
   availableRooms: Room[];
   message?: string;
-  inComingRequests?: Request[]
+  inComingRequests?: Request[];
+  showMessages?: boolean;
 }
 
 const initialState: LobbyState = {
   availableRooms: [],
   inComingRequests: [],
-  socketStatus: 'idle'
+  socketStatus: 'idle',
+  showMessages: false,
 }
 
 export const lobbySlice = createSlice({
   name: 'lobby',
   initialState,
   reducers: {
+    changeShowMsgStatus: (state, action: PayloadAction<LobbyState['showMessages']>) => {
+      state.showMessages = action.payload; 
+    },
     changeSocketStatus: (state, action: PayloadAction<LobbyState['socketStatus']>) => {
       state.socketStatus = action.payload
     },
@@ -71,6 +76,7 @@ export const lobbySlice = createSlice({
 
 
 
-export const { changeSocketStatus, setAvailableRooms, pushToLobby, connectSocket,
+export const {
+  changeShowMsgStatus, changeSocketStatus, setAvailableRooms, pushToLobby, connectSocket,
   addRoom,updateRoom, removeRoom, addRequest, addMessage, updateRequests } = lobbySlice.actions;
 export default lobbySlice.reducer;

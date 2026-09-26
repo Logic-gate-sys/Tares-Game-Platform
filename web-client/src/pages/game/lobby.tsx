@@ -16,73 +16,73 @@ import { PetitionCard } from '#components/ui/petition';
 
 
 // sample notification data
-const petitionData = [
-  {
-    id: "1",
-    petitionNumber: "REQ-9083",
-    timeAgo: "1m",
-    expiresIn: "01:12",
-    playerName: "NOVA_GLITCH",
-    playerLevel: 19,
-    playerRank: "NOVICE",
-    stats: { wins: 32, accuracy: 88.5, ping: 45 },
-    targetRoom: "CYBERPUNK CITY",
-    hostBypass: "NO",
-  },
-  {
-    id: "2",
-    petitionNumber: "REQ-9084",
-    timeAgo: "3m",
-    expiresIn: "00:58",
-    playerName: "VOID_RUNNER",
-    playerLevel: 41,
-    playerRank: "VERIFIED",
-    stats: { wins: 128, accuracy: 94.2, ping: 22 },
-    targetRoom: "NEON DISTRICT",
-    hostBypass: "YES",
-  },
-  {
-    id: "3",
-    petitionNumber: "REQ-9085",
-    timeAgo: "7m",
-    expiresIn: "02:34",
-    playerName: "PIXEL_WARDEN",
-    playerLevel: 27,
-    playerRank: "NOVICE",
-    stats: { wins: 54, accuracy: 81.7, ping: 67 },
-    targetRoom: "SHADOW ARENA",
-    hostBypass: "NO",
-  },
-  {
-    id: "4",
-    petitionNumber: "REQ-9086",
-    timeAgo: "12m",
-    expiresIn: "00:41",
-    playerName: "ECHO_STRIKE",
-    playerLevel: 58,
-    playerRank: "VERIFIED",
-    stats: { wins: 243, accuracy: 97.1, ping: 18 },
-    targetRoom: "SKYLINE CORE",
-    hostBypass: "YES",
-  },
-  {
-    id: "5",
-    petitionNumber: "REQ-9087",
-    timeAgo: "25m",
-    expiresIn: "03:09",
-    playerName: "CRYPT_FOX",
-    playerLevel: 33,
-    playerRank: "NOVICE",
-    stats: { wins: 89, accuracy: 90.3, ping: 39 },
-    targetRoom: "GLITCH VAULT",
-    hostBypass: "NO",
-  },
-];
+// const petitionData = [
+//   {
+//     id: "1",
+//     petitionNumber: "REQ-9083",
+//     timeAgo: "1m",
+//     expiresIn: "01:12",
+//     playerName: "NOVA_GLITCH",
+//     playerLevel: 19,
+//     playerRank: "NOVICE",
+//     stats: { wins: 32, accuracy: 88.5, ping: 45 },
+//     targetRoom: "CYBERPUNK CITY",
+//     hostBypass: "NO",
+//   },
+//   {
+//     id: "2",
+//     petitionNumber: "REQ-9084",
+//     timeAgo: "3m",
+//     expiresIn: "00:58",
+//     playerName: "VOID_RUNNER",
+//     playerLevel: 41,
+//     playerRank: "VERIFIED",
+//     stats: { wins: 128, accuracy: 94.2, ping: 22 },
+//     targetRoom: "NEON DISTRICT",
+//     hostBypass: "YES",
+//   },
+//   {
+//     id: "3",
+//     petitionNumber: "REQ-9085",
+//     timeAgo: "7m",
+//     expiresIn: "02:34",
+//     playerName: "PIXEL_WARDEN",
+//     playerLevel: 27,
+//     playerRank: "NOVICE",
+//     stats: { wins: 54, accuracy: 81.7, ping: 67 },
+//     targetRoom: "SHADOW ARENA",
+//     hostBypass: "NO",
+//   },
+//   {
+//     id: "4",
+//     petitionNumber: "REQ-9086",
+//     timeAgo: "12m",
+//     expiresIn: "00:41",
+//     playerName: "ECHO_STRIKE",
+//     playerLevel: 58,
+//     playerRank: "VERIFIED",
+//     stats: { wins: 243, accuracy: 97.1, ping: 18 },
+//     targetRoom: "SKYLINE CORE",
+//     hostBypass: "YES",
+//   },
+//   {
+//     id: "5",
+//     petitionNumber: "REQ-9087",
+//     timeAgo: "25m",
+//     expiresIn: "03:09",
+//     playerName: "CRYPT_FOX",
+//     playerLevel: 33,
+//     playerRank: "NOVICE",
+//     stats: { wins: 89, accuracy: 90.3, ping: 39 },
+//     targetRoom: "GLITCH VAULT",
+//     hostBypass: "NO",
+//   },
+// ];
 
 export function Lobby() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { availableRooms, inComingRequests } = useSelector((state: RootState) => state.lobby)
+  const { availableRooms, inComingRequests, showMessages } = useSelector((state: RootState) => state.lobby)
   const authState = useSelector((state: RootState) => state.auth);
   const arenaState = useSelector((state: RootState) => state.arena);
   const { showNotice } = useUI();
@@ -141,7 +141,14 @@ export function Lobby() {
     if (!roomId) return;
     try {
       if (!authState.user) return;
-      dispatch(pushToLobby({ type: 'in:lobby', payload: { action: "request:room:join", value: { roomId, playerName: authState.user.username ?? '', playerLevel: authState.user.p_level ?? '1' } } }));
+      dispatch(pushToLobby({
+        type: 'in:lobby', payload: {
+          action: "request:room:join", value: {
+            roomId,
+            playerId: authState.user.id,
+          }
+        }
+      }));
       showNotice("Success", "Request sent to room owner, please wait while your request is processed...")
     } catch (err) {
       console.error(err)
@@ -324,10 +331,9 @@ export function Lobby() {
         {openRoomSettings && <SettingsModal room={selectedRoom} onClose={() => setOpenRoomSettings(false)} onSave={handleUpdateRoom} />}
 
         {/*--------------- PETITION MODAL STACK -----------------*/}
-        {inComingRequests.length > 0 && (
-          <div className="fixed inset-0 z-99 flex items-center justify-center p-4 bg-[#121721]/40 backdrop-blur-md">
-            {/* 1. Relative container mapping over 'petitions' state instead of static 'petitionData' */}
-            <div className="relative w-full max-w-2xl flex items-center justify-center min-h-[300px]">
+        {inComingRequests.length > 0 && showMessages && (
+          <div className="fixed inset-0 z-99 flex items-center justify-center p-4 bg-deep-ink/40 backdrop-blur-md">
+            <div className="relative w-full max-w-2xl flex items-center justify-center min-h-75">
 
               {inComingRequests.map((dt, index) => {
                 // Performance: Only render the top 4 cards visually

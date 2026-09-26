@@ -1,10 +1,10 @@
 package ws
 
 import (
-	"github.com/logic-gate-sys/tares-cli/internals/engine"
-	"github.com/logic-gate-sys/tares-cli/internals/events"
-	"github.com/logic-gate-sys/tares-cli/internals/store"
-	"github.com/logic-gate-sys/tares-cli/internals/timer"
+	"github.com/logic-gate-sys/wss_service/internals/engine"
+	"github.com/logic-gate-sys/wss_service/internals/events"
+	"github.com/logic-gate-sys/wss_service/internals/store"
+	"github.com/logic-gate-sys/wss_service/internals/timer"
 	"log"
 )
 

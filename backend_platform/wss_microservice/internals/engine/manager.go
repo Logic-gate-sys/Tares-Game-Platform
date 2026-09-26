@@ -2,7 +2,7 @@ package engine
 
 import (
 	"crypto"
-	"github.com/logic-gate-sys/tares-cli/internals/events"
+	"github.com/logic-gate-sys/wss_service/internals/events"
 	"time"
 )
 

@@ -45,8 +45,8 @@ services:
 
   user-service:
     build:
-      context: ./backend_platform/user_microservice
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend_platform/user_microservice/Dockerfile
     environment:
       NODE_ENV: development
       SERVER_PORT: 3000
@@ -56,7 +56,8 @@ services:
       user-db:
         condition: service_healthy
     ports:
-      - "3000:3000"
+      - "3000:3000" # HTTP PORT
+      - "50051:50051" #GRPC PORT
     profiles: ["dev", "prod"]
 
   wss-service:

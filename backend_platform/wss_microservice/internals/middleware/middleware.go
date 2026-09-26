@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/logic-gate-sys/tares-cli/internals/utils"
+	"github.com/logic-gate-sys/wss_service/internals/utils"
 	"net/http"
 	"os"
 	"strconv"

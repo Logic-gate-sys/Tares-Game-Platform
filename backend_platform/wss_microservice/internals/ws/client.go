@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
-	"github.com/logic-gate-sys/tares-cli/internals/events"
+	"github.com/logic-gate-sys/wss_service/internals/events"
 	"sync/atomic"
 	"time"
 )
@@ -12,7 +12,7 @@ import (
 // Holds the state of any connected device (e.g browser, terminal) at any time
 type client struct {
 	name                 string // connect client's name
-	userId               int
+	userId               int32
 	socket               *websocket.Conn // socket connection by which the client communicates over the network
 	inLobbyToClientEvent chan events.LobbyStateBroadcast
 	inGameToClientEvent  chan events.GameStateBroadcast //messages going from server to client
