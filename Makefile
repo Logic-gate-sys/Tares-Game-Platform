@@ -1,79 +1,45 @@
-.PHONY: help install dev build clean lint test
+.DEFAULT_GOAL := help
+.PHONY: help install dev dev-services dev-client prod-build prod-up down logs \
+        lint test test-user test-wss clean
 
 help:
-	@echo "Tares: Full-Stack Development"
-	@echo ""
-	@echo "Commands:"
-	@echo "  make install        Install dependencies for server and client"
-	@echo "  make dev-mode       Run db, server and client in parallel (requires concurrently)"
-	@echo "  make dev-server     Run only the Go server"
-	@echo "  make dev-client     Run only the React client"
-	@echo "  make build          Build server and client for production"
-	@echo "  make build-server   Build only the Go server"
-	@echo "  make build-client   Build only the React client"
-	@echo "  make clean          Remove build artifacts"
-	@echo "  make lint           Lint server and client code"
-	@echo "  make test           Run tests for server and client"
-	@echo "  make ui-test        Run React/Vite component and unit tests"
-	@echo "  make start-pg       Spawn docker Development postgres container"
-	@echo "  make pg-connect     Connect to running postgres instance "
+	@printf '%s\n' \
+		'Tares development and production commands:' \
+		'  make install       Install user-service and web-client dependencies' \
+		'  make dev           Start backend infrastructure in Docker and Vite on the host' \
+		'  make down          Stop compose services' \
+		'  make logs          Follow compose logs' \
+		'  make lint          Run service linters' \
+		'  make test          Run backend and client tests' \
+		'  make clean         Remove generated build artifacts'
 
 install:
-	@echo "📦 Installing Go dependencies..."
-	cd server && go mod download
-	@echo "📦 Installing Node dependencies..."
-	cd web-client && npm install
+	cd backend_platform/user_microservice && npm ci --legacy-peer-deps
+	cd web-client && npm ci --legacy-peer-deps
+	cd backend_platform/wss_microservice && go mod download
 
-dev-mode:
-	cd web-client && npm run dev 
-# run client & server dev scripts
-dev-server:
-	@echo "🎮 Starting Go server..."
-	cd server && go run main.go
-dev-live-server:
-	@echo "Starting live go server"
-	cd server && air 
-	
-dev-client:
-	@echo "⚛️  Starting React dev server..."
-	cd web-client && npm run dev -- --force
+dev:
+	cd web-client && VITE_BASE_URL=http://localhost:8081 npm run dev
 
-# Build for production
-build: build-server build-client
-	@echo "Build complete. Server binary at ./server && Client bundle at ./web-client/dist"
-pg-connect:
-	docker exec -it taresDB psql -U logic -d tares_db 
-start-pg:
-	docker compose up 
-# needs refinement
-build-server:
-	@echo "🔨 Building Go server..."
-	cd server && go build -o ../tares-server .
+down:
+	docker compose --profile dev --profile prod down
 
-build-client:
-	@echo "🔨 Building React client..."
-	cd web-client && npm run build
+logs:
+	docker compose --profile dev --profile prod logs -f
 
-# Clean
-clean:
-	@echo "🧹 Cleaning build artifacts..."
-	rm -f tares-server
-	rm -rf web-client/dist
-	cd server && go clean
-
-# Linting
 lint:
-	@echo "🔍 Linting Go code..."
-	cd server && go fmt ./...
-	cd server && go vet ./...
-	@echo "🔍 Linting TypeScript..."
+	cd backend_platform/user_microservice && npm run lint
 	cd web-client && npm run lint
+	cd backend_platform/wss_microservice && gofmt -w . && go vet ./...
 
-# Testing
-ui-test:
-	cd web-client && npm run test
-test:
-	@echo "🧪 Running Go tests..."
-	cd server && go test ./... -v
-	@echo "🧪 Running Node tests..."
-	cd web-client && npm test -- --run 2>/dev/null || echo "(No test suite configured yet)"
+test: test-user test-wss
+	cd web-client && npm test -- --run
+
+test-user:
+	cd backend_platform/user_microservice && npm test -- --run
+
+test-wss:
+	cd backend_platform/wss_microservice && go test ./...
+
+clean:
+	rm -rf web-client/dist backend_platform/wss_microservice/tmp

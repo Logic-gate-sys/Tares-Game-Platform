@@ -1,0 +1,77 @@
+{
+  "name": "user_microservice",
+  "version": "1.0.0",
+  "description": "A microservice for user related operations in the tares game platform ",
+  "keywords": [
+    "User",
+    "Auth",
+    "Sercurity",
+    "Isolation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "github.com/logic-gate-sys/tares_cli"
+  },
+  "license": "ISC",
+  "author": "Logic Gate",
+  "type": "module",
+  "main": "src/server.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "NODE_ENV=test vitest run --coverage",
+    "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
+    "db:studio": "drizzle-kit studio --config=drizzle.config.ts",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "dev": "NODE_ENV=development node --watch-path=src src/server.ts ",
+    "lint": "eslint --fix"
+  },
+  "imports": {
+    "#loaders/*": "./src/loaders/*.ts",
+    "#controllers/*": "./src/controllers/*.ts",
+    "#models/*": "./src/models/*.ts",
+    "#schemas/*": "./src/schemas/*.ts",
+    "#services/*": "./src/services/*.ts",
+    "#routes/*": "./src/routes/*.ts",
+    "#middlewares/*": "./src/middlewares/*.ts",
+    "#repositories/*": "./src/repositories/*.ts",
+    "#utils/*": "./src/utils/*.ts",
+    "#config/*": "./src/config/*.ts",
+    "#db/*": "./src/db/*.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@tsconfig/node24": "^24.0.5",
+    "@types/dotenv": "^6.1.1",
+    "@types/node": "^26.6.1",
+    "@types/pg": "^8.23.1",
+    "@types/supertest": "^7.2.1",
+    "@types/swagger-ui-express": "^4.1.8",
+    "@types/yamljs": "^0.2.34",
+    "@vitest/coverage-v8": "^5.0.1",
+    "drizzle-kit": "^1.0.0-rc.4",
+    "eslint": "^10.10.0",
+    "globals": "^17.12.0",
+    "supertest": "^7.2.2",
+    "typescript-eslint": "^8.70.0",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
+  },
+  "dependencies": {
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.2.0",
+    "cloudinary": "^2.11.0",
+    "custom-env": "^2.0.6",
+    "dotenv": "^18.0.0",
+    "drizzle-orm": "^1.0.0-rc.4",
+    "drizzle-zod": "^0.8.3",
+    "express": "^5.2.1",
+    "jiti": "^2.7.0",
+    "multer": "^2.4.0",
+    "pg": "^8.23.0",
+    "swagger-ui-express": "^5.0.1",
+    "yamljs": "^0.3.0",
+    "zod": "^4.6.5"
+  }
+}

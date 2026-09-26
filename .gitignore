@@ -1,25 +1,102 @@
-.env
-server/databases
+# ---------------------------------------------------------------------------
+# Environment and secrets
+# ---------------------------------------------------------------------------
+# Ignore all environment files by default. Keep templates and examples.
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.template
+!**/.env.sample
 
-# Logs
-web-client/logs
-web-client/*.log
-web-client/npm-debug.log*
-web-client/yarn-debug.log*
-web-client/yarn-error.log*
-web-client/pnpm-debug.log*
-web-client/lerna-debug.log*
-web-client/node_modules
-web-client/dist
-web-client/dist-ssr
-web-client/*.local
-web-client/# Editor directories and files
-web-client/.vscode/*
-web-client/!.vscode/extensions.json
-web-client/.idea
-web-client/.DS_Store
-web-client/*.suo
-web-client/*.ntvs*
-web-client/*.njsproj
-web-client/*.sln
-web-client/*.sw?
+# ---------------------------------------------------------------------------
+# Node.js / TypeScript services and web client
+# ---------------------------------------------------------------------------
+**/node_modules/
+**/dist/
+**/build/
+**/.vite/
+**/.cache/
+**/.parcel-cache/
+**/.turbo/
+**/.eslintcache
+**/*.tsbuildinfo
+
+# Test and coverage output
+**/coverage/
+**/.nyc_output/
+**/test-results/
+**/playwright-report/
+**/blob-report/
+**/junit.xml
+
+# Package-manager logs and local state
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+.yarn/*
+!.yarn/patches/
+!.yarn/plugins/
+!.yarn/releases/
+!.yarn/versions/
+
+# ---------------------------------------------------------------------------
+# Go services
+# ---------------------------------------------------------------------------
+**/bin/
+**/tmp/
+**/*.test
+**/*.out
+**/vendor/
+**/.env
+# ---------------------------------------------------------------------------
+# Runtime data and generated local files
+# ---------------------------------------------------------------------------
+**/logs/
+**/*.log
+**/uploads/
+**/storage/
+**/data/
+*.pid
+*.seed
+
+# Drizzle migrations are source-controlled; ignore only local database files.
+**/.drizzle/
+
+# ---------------------------------------------------------------------------
+# Docker and local development
+# ---------------------------------------------------------------------------
+.docker/
+docker-compose.override.yaml
+docker-compose.override.yml
+
+# ---------------------------------------------------------------------------
+# Editors, operating systems, and tooling
+# ---------------------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Desktop.ini
+
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+*.swp
+*.swo
+*~
+
+# ---------------------------------------------------------------------------
+# Local certificates and private keys
+# ---------------------------------------------------------------------------
+*.pem
+*.key
+*.crt
+!**/*.example.pem
+!**/*.example.key
+!**/*.example.crt

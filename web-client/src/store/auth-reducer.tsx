@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "start" });
     dispatch({ type: "progress", payload: { amount: 35 } })
     try {
-      const res = await apiClient.post<FormData>("/users/signup", data, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const res = await apiClient.post<FormData>("/users/signup", data);
       if (res.status >= 400) {
         dispatch({ type: "error", payload: { errorMsg: `Failed to signup: status ${res.status}` } });
         dispatch({ type: "progress", payload: { amount: 100 } })

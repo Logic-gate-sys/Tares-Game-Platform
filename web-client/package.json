@@ -5,10 +5,9 @@
     "main": "./src/main.tsx",
     "type": "module",
     "scripts": {
-        "dev": "concurrently --kill-others -n docker,server,client -c magenta,green,yellow \"npm:start:pg\" \"npm:dev:server\" \"npm:dev:client\" ",
-        "dev:server": "cd .. && make dev-server",
+        "dev": "concurrently --kill-others -n backend-compose,client -c magenta,green \"npm:start:backend\"  \"npm:dev:client\" ",
         "dev:client": "vite ",
-        "start:pg": "cd .. && make start-pg",
+        "start:backend": "cd .. && docker compose --profile dev up --remove-orphans user-db game-db redis user-service wss-service dev-gateway",
         "test": "vitest run --coverage",
         "build": "tsc -b && vite build",
         "lint": "eslint . --fix",

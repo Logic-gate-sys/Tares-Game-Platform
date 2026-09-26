@@ -1,0 +1,306 @@
+openapi: 3.0.3
+info:
+  title: Tares User Microservice
+  description: Internal user API for the Tares platform.
+  contact:
+    name: Logic Gate
+    url: https://www.craftrr.dev
+    email: qtgenius@gmail.com
+  license:
+    name: ISC
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      description: Health check for external monitoring.
+      responses:
+        '200':
+          description: Process health information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uptime: { type: number }
+                  timestamp: { type: number }
+  /api/v1/auth/register:
+    post:
+      description: Register a user with an optional avatar image.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [email, username, password]
+              properties:
+                email: { type: string, format: email }
+                username: { type: string, minLength: 3, maxLength: 100 }
+                password: { type: string, format: password, minLength: 8 }
+                playerLevel: { type: string, default: '1' }
+                rank: { type: string, default: unranked }
+                bio: { type: string }
+                bgClass: { type: string }
+                avatar: { type: string, format: binary }
+      responses:
+        '201':
+          description: User registered
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthenticationResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/v1/auth/login:
+    post:
+      description: Authenticate with an email or username.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                email: { type: string, format: email }
+                username: { type: string }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: User authenticated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthenticationResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/auth/refresh:
+    post:
+      description: Generate a new access token from a refresh token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        '200': { description: Tokens refreshed }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/auth/logout:
+    post:
+      description: Revoke an active refresh token.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Session revoked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { success: { type: boolean, example: true } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/auth/forgot-password:
+    post:
+      description: Request a password reset token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200': { description: Reset request accepted }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/v1/auth/reset-password:
+    post:
+      description: Consume a password reset token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token: { type: string }
+                password: { type: string, format: password, minLength: 8 }
+      responses:
+        '200': { description: Password updated }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/v1/users/me:
+    get:
+      description: Fetch the authenticated user's profile.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/users/me/stats:
+    get:
+      description: Fetch the authenticated user's game statistics.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Current user statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [playerLevel, rank, totalScore]
+                properties:
+                  playerLevel: { type: string }
+                  rank: { type: string }
+                  totalScore: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    patch:
+      description: Update profile customization fields.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username: { type: string }
+                bio: { type: string }
+                avatarUrl: { type: string, format: uri }
+                bgClass: { type: string }
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/users/{id}:
+    get:
+      description: Get a public profile by ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Public profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/users/by-username/{username}:
+    get:
+      description: Get a public profile by username.
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Public profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/leaderboard:
+    get:
+      description: Return users ordered by total score.
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Paginated leaderboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/User' }
+                  pagination:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      limit: { type: integer }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: signed-token
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        email: { type: string, format: email }
+        username: { type: string }
+        playerLevel: { type: string }
+        rank: { type: string }
+        bio: { type: string }
+        totalScore: { type: integer }
+        avatarUrl: { type: string, format: uri }
+        bgClass: { type: string }
+        createdAt: { type: string, format: date-time }
+        lastLogin: { type: string, format: date-time }
+      required: [id, email, username, playerLevel, rank, bio, totalScore, avatarUrl, bgClass, createdAt, lastLogin]
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+    ValidationError:
+      type: object
+      properties:
+        error: { type: string }
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              message: { type: string }
+    AuthenticationResponse:
+      type: object
+      required: [user, token]
+      properties:
+        user: { $ref: '#/components/schemas/User' }
+        token: { type: string }
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: Duplicate email or username
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: User not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ValidationError' }
