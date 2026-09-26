@@ -18,7 +18,7 @@ export type AuthResponse = {
   error?: unknown;
   token: string;
   user?: {
-    id: string;
+    id: number;
     email: string;
     username?: string;
     p_level?: string;

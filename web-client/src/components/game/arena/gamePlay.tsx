@@ -47,7 +47,7 @@ export  const GameplayArena=({ onSuccess }: GameplayArenaProps)=>{
       </div>
 
       {/* The Scrambled Word */}
-      <div className="w-full flex flex-wrap justify-center gap-sm md:gap-md py-xl min-h-[160px] items-center">
+      <div className="w-full flex flex-wrap justify-center gap-sm md:gap-md py-xl min-h-40 items-center">
         <LetterTile letter="O" delay="0.1s" />
         <Divider />
         <LetterTile letter="U" delay="0.4s" />
@@ -68,7 +68,7 @@ export  const GameplayArena=({ onSuccess }: GameplayArenaProps)=>{
           required
           onChange={handleInputChange}
           placeholder="TYPE YOUR ANSWER..."
-          className="w-full bg-paper-white border-[4px] border-deep-ink px-lg py-xl font-headline-md text-headline-md uppercase placeholder:opacity-20 focus:outline-none focus:border-action-red neubrutal-shadow transition-all group-active:translate-x-1 group-active:translate-y-1 group-active:shadow-none"
+          className="w-full bg-paper-white border-4 border-deep-ink px-lg py-xl font-headline-md text-headline-md uppercase placeholder:opacity-20 focus:outline-none focus:border-action-red neubrutal-shadow transition-all group-active:translate-x-1 group-active:translate-y-1 group-active:shadow-none"
         />
         <button className="absolute right-4 top-1/2 -translate-y-1/2 bg-action-red text-paper-white border-2 border-deep-ink px-md py-sm font-label-bold text-label-bold neubrutal-shadow-sm hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all active:scale-95">
           SUBMIT

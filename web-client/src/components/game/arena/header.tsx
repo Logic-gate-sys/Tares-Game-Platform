@@ -15,10 +15,10 @@ export const Header = ({ messages, onShowMsg}: {messages?:number, onShowMsg?: ()
           </div>
         </div>
         <div className="flex items-center gap-sm">
-          <button className="material-symbols-outlined text-primary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all p-2 bg-sky-blue border-2 border-deep-ink neubrutal-shadow-sm">
+          <button className="material-symbols-outlined text-primary hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all p-2 bg-sky-blue border-2 border-deep-ink neubrutal-shadow-sm">
             leaderboard
           </button>
-          <button className="material-symbols-outlined text-deep-ink hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all p-2 bg-paper-white border-2 border-deep-ink neubrutal-shadow-sm">
+          <button className="material-symbols-outlined text-deep-ink hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all p-2 bg-paper-white border-2 border-deep-ink neubrutal-shadow-sm">
             settings
           </button>
           <div className="relative inline-flex w-fit">
@@ -26,7 +26,7 @@ export const Header = ({ messages, onShowMsg}: {messages?:number, onShowMsg?: ()
               {messages>5? '5+': messages}
             </div>}
 
-            <button className="material-symbols-outlined text-deep-ink hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all p-2 bg-paper-white border-2 border-deep-ink neubrutal-shadow-sm"
+            <button className="material-symbols-outlined text-deep-ink hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all p-2 bg-paper-white border-2 border-deep-ink neubrutal-shadow-sm"
             onClick={onShowMsg}
             >
               message

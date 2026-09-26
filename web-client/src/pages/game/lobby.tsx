@@ -80,9 +80,10 @@ import { PetitionCard } from '#components/ui/petition';
 // ];
 
 export function Lobby() {
+  
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { availableRooms, inComingRequests, showMessages } = useSelector((state: RootState) => state.lobby)
+  const { availableRooms, inComingRequests, showMessages, message } = useSelector((state: RootState) => state.lobby)
   const authState = useSelector((state: RootState) => state.auth);
   const arenaState = useSelector((state: RootState) => state.arena);
   const { showNotice } = useUI();
@@ -154,12 +155,11 @@ export function Lobby() {
       showNotice("Error", "Request to join room failed")
     }
   }
-
   const handleEnterOwnRoom = (room: Room) => {
     handleRoomJoinRequest(undefined, room.id);
   };
 
-  // Sync HANDLERS
+  // Owner resolves  requestor's petition 
   const handlePetitionAction = (id: string, actionType: 'resolved' | 'rejected') => {
     const request = inComingRequests.find((item) => item.id === id);
     if (request) {
@@ -176,9 +176,12 @@ export function Lobby() {
 
   useEffect(() => {
     if (arenaState.status === "room:in" && arenaState.room) {
+      showNotice("Success", "Room join request successuful. waitting while we connect you to room");
       navigate("/game/arena");
+    } else if (arenaState.status === "room:out") {
+      showNotice("Notice", message);
     }
-  }, [arenaState.room, arenaState.status, navigate]);
+  }, [arenaState.room, arenaState.status, navigate, showNotice,message]);
 
 
 

@@ -225,14 +225,15 @@ func (rm *roomManager) Run() {
 					break
 				}
 				pending, ok := rm.pendingJoins[payload.RequestID]
-				if !ok || action.Client.userId != int32(pending.ownerID) {
+				if !ok {
 					break
 				}
 				delete(rm.pendingJoins, payload.RequestID)
+				// if resolved action is to deny requestor 
 				if !payload.Accepted {
 					pending.requester.inLobbyToClientEvent <- events.LobbyStateBroadcast{
 						Which: events.JoinResponse,
-						Data:  map[string]any{"accepted": false, "reason": "Room owner rejected the request"},
+						Data:  map[string]any{"accepted": false, "message": "Room owner rejected the request"},
 					}
 					break
 				}
@@ -243,9 +244,18 @@ func (rm *roomManager) Run() {
 				if err := rm.joinRoom(pending.requester, room); err != nil {
 					pending.requester.inLobbyToClientEvent <- events.LobbyStateBroadcast{
 						Which: events.JoinResponse,
-						Data:  map[string]any{"accepted": false, "reason": err.Error()},
+						Data:  map[string]any{"accepted": false, "message": "Could not find requested room"},
 					}
 					break
+				}
+
+				// else end success response to requestor
+				pending.requester.inLobbyToClientEvent <- events.LobbyStateBroadcast{
+					Which: events.JoinResponse,
+					Data: map[string]any{
+						"accepted": true, 
+						"room":room, 
+						"message": fmt.Sprintf("Success!, welcome to game room: %s",room.Name)},
 				}
 			}
 		}
