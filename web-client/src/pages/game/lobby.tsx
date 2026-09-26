@@ -144,8 +144,7 @@ export function Lobby() {
       dispatch(pushToLobby({
         type: 'in:lobby', payload: {
           action: "request:room:join", value: {
-            roomId,
-            playerId: authState.user.id,
+            roomId: roomId
           }
         }
       }));
