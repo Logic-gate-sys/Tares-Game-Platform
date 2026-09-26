@@ -2,18 +2,13 @@ package middleware
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
-	"encoding/json"
 	"errors"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/logic-gate-sys/tares-cli/internals/utils"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"time"
-
-	"github.com/logic-gate-sys/tares-cli/internals/utils"
 )
 
 type AuthUser struct {
@@ -64,16 +59,6 @@ func (um *UserMiddleware) Authenticate(next http.Handler) http.Handler {
 	})
 }
 
-func (um *UserMiddleware) RequireAuth(next http.Handler) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if GetUser(r) == nil {
-			utils.WriteJSON(w, http.StatusUnauthorized, utils.Envlope{"error": "Authorization is required"})
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
 func bearerOrQueryToken(r *http.Request) (string, bool) {
 	if header := r.Header.Get("Authorization"); header != "" {
 		parts := strings.SplitN(header, " ", 2)
@@ -86,37 +71,45 @@ func bearerOrQueryToken(r *http.Request) (string, bool) {
 	return token, token != ""
 }
 
+func (um *UserMiddleware) RequireAuth(next http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if GetUser(r) == nil {
+			utils.WriteJSON(w, http.StatusUnauthorized, utils.Envlope{"error": "Authorization is required"})
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (um *UserMiddleware) verify(token string) (*AuthUser, error) {
-	parts := strings.Split(token, ".")
-	if len(parts) != 2 {
-		return nil, errors.New("invalid token")
+	parsed, err := jwt.Parse(token, func(parsed *jwt.Token) (any, error) {
+		if parsed.Method != jwt.SigningMethodHS256 {
+			return nil, errors.New("unexpected signing method")
+		}
+		return um.secret, nil
+	})
+	if err != nil || !parsed.Valid {
+		return nil, errors.New("invalid or expired token")
 	}
-	signature, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		return nil, err
+
+	claims, ok := parsed.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("invalid token claims")
 	}
-	mac := hmac.New(sha256.New, um.secret)
-	_, _ = mac.Write([]byte(parts[0]))
-	if !hmac.Equal(signature, mac.Sum(nil)) {
-		return nil, errors.New("invalid signature")
+	sub, ok := claims["sub"].(string)
+	if !ok || sub == "" {
+		return nil, errors.New("invalid token subject")
 	}
-	body, err := base64.RawURLEncoding.DecodeString(parts[0])
-	if err != nil {
-		return nil, err
+	email, emailOK := claims["email"].(string)
+	username, usernameOK := claims["username"].(string)
+	playerLevel, levelOK := claims["pLevel"].(string)
+	if !emailOK || !usernameOK || !levelOK {
+		return nil, errors.New("invalid token claims")
 	}
-	var claims struct {
-		Sub       string `json:"sub"`
-		Email     string `json:"email"`
-		Username  string `json:"username"`
-		PLevel    string `json:"pLevel"`
-		ExpiresAt int64  `json:"exp"`
+
+	id, err := strconv.Atoi(sub)
+	if err != nil || id <= 0 {
+		return nil, errors.New("invalid token subject")
 	}
-	if err := json.Unmarshal(body, &claims); err != nil {
-		return nil, err
-	}
-	id, err := strconv.Atoi(claims.Sub)
-	if err != nil || id <= 0 || claims.ExpiresAt < time.Now().Unix() {
-		return nil, errors.New("invalid claims")
-	}
-	return &AuthUser{ID: id, Email: claims.Email, Username: claims.Username, PlayerLevel: claims.PLevel}, nil
+	return &AuthUser{ID: id, Email: email, Username: username, PlayerLevel: playerLevel}, nil
 }

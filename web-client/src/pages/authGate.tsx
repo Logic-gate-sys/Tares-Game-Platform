@@ -1,21 +1,25 @@
 import React, { useState } from "react";
+import { useEffect } from "react";
 import type { LoginRequest, SignupRequest } from "#types/type";
-import { useAuth } from "#store/auth-reducer";
 import { Eye, EyeOff } from 'lucide-react';
 import { Footer } from "#components/footer";
 import { Outlet } from "react-router-dom";
 import { useAnimation } from '#components/index';
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { connectSocket } from '#store/slices/lobby';
-import { setToken } from "#store/slices/auth";
+import { clearAuthMessage } from "#store/slices/auth";
+import type { RootState } from "#store/store";
+import { useSignInMutation, useSignUpMutation } from "#store/services/authExtend";
 import { Loader } from "#components/ui/loader";
 import { MessageBox } from "#components/ui/notification";
 
 
 export function AuthGate() {
-  const { state, login, signup, restore } = useAuth();
+  const state = useSelector((store: RootState) => store.auth);
   const { handleKeyDownAnimation, backgroundLetters } = useAnimation();
   const dispatch = useDispatch();
+  const [signIn] = useSignInMutation();
+  const [signUp] = useSignUpMutation();
   // Separate UI control state from form field data
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [showPassword, setShowPassword] = useState(false);
@@ -26,6 +30,27 @@ export function AuthGate() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
+  useEffect(() => {
+    if (!state.token) {
+      window.localStorage.removeItem("tares.auth");
+      return;
+    }
+    window.localStorage.setItem("tares.auth", JSON.stringify({
+      token: state.token,
+      user: state.user,
+    }));
+  }, [state.token, state.user]);
+
+  useEffect(() => {
+    if (!state.token || state.status !== "is-authenticated") return;
+    const protocol = location.protocol === "https:" ? "wss" : "ws";
+    const apiBaseUrl = import.meta.env.VITE_BASE_URL ?? window.location.origin;
+    const socketBaseUrl = apiBaseUrl.replace(/^https?/, protocol);
+    dispatch(connectSocket({
+      url: `${socketBaseUrl}/ws?token=${encodeURIComponent(state.token)}`,
+    }));
+  }, [dispatch, state.status, state.token]);
+
   const handleSubmitAction = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -34,10 +59,18 @@ export function AuthGate() {
         email,
         password: { plain_text: password }
       };
-      await login(loginData);
+      try {
+        await signIn(loginData).unwrap();
+      } catch {
+        // The auth slice receives and displays the mutation error.
+      }
     } else {
       if (password !== confirmPassword) {
         alert("Passwords do not match");
+        return;
+      }
+      if (!avatarFile) {
+        alert("An avatar image is required");
         return;
       }
       const signupData: SignupRequest = {
@@ -50,22 +83,17 @@ export function AuthGate() {
       formdata.append("data", JSON.stringify(signupData));
 
       // Append actual File object if selected
-      if (avatarFile) {
-        formdata.append("avatar", avatarFile);
-        console.log("FILE: ", avatarFile)
+      formdata.append("avatar", avatarFile);
+      try {
+        await signUp(formdata).unwrap();
+      } catch {
+        // The auth slice receives and displays the mutation error.
       }
-      await signup(formdata);
     }
   };
 
   // Authenticated state handling
   if (state.status === "is-authenticated" && state.token) {
-    // auth should have token
-    dispatch(setToken(state.token));
-    const protocol = location.protocol === "https:" ? "wss" : "ws";
-    const apiBaseUrl = import.meta.env.VITE_BASE_URL ?? window.location.origin;
-    const socketBaseUrl = apiBaseUrl.replace(/^https?/, protocol);
-    dispatch(connectSocket({ url: `${socketBaseUrl}/api/v1/ws?token=${encodeURIComponent(state.token)}` }));
     return <Outlet />;
   };
 
@@ -73,9 +101,9 @@ export function AuthGate() {
     <div className=" bg-background h-full text-on-background min-h-screen flex flex-col font-body-md overflow-x-hidden">
       {state.status === "is-loading" && <Loader progress={state.progress} />}
       {state.status === "error" &&
-        <MessageBox title={"Auth Error!"} message={(state.error as string).split(".")} onClose={() => restore("error")} onContinue={() => restore("error")} />}
+        <MessageBox title={"Auth Error!"} message={(state.error ?? "Authentication failed").split(".")} onClose={() => dispatch(clearAuthMessage())} onContinue={() => dispatch(clearAuthMessage())} />}
       {state.message &&
-        <MessageBox title={"Auth Success"} message={(state.message as string).split(".")} onClose={() => restore("success")} onContinue={() => restore("success")} />}
+        <MessageBox title={"Auth Success"} message={state.message.split(".")} onClose={() => dispatch(clearAuthMessage())} onContinue={() => dispatch(clearAuthMessage())} />}
       <main className="grow flex items-center justify-center relative py-xl px-margin-mobile">
         {/* Floating Badges */}
         <div className="absolute top-20 left-10 sticker-float hidden lg:block">

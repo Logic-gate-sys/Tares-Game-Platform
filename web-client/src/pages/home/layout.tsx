@@ -1,4 +1,4 @@
-import { NavigationBar } from "#components/home/navigation-bar";
+import { NavigationBar } from "#components/home/navigationBar";
 import { Outlet } from "react-router-dom";
 
 export default function HomeLayout() {

@@ -1,5 +1,4 @@
 import { pgTable, bytea, serial, varchar, text, integer, timestamp } from 'drizzle-orm/pg-core';
-import { createSelectSchema, createInsertSchema } from 'drizzle-zod';
 
 //Users entity
 export const Users = pgTable('users', {
@@ -27,13 +26,9 @@ export const Tokens = pgTable('tokens', {
 
 
 // Schemas 
-export const selectTokenSchema = createSelectSchema(Tokens);
-export const insertTokenSchema = createInsertSchema(Tokens);
 export type Token = typeof Tokens.$inferSelect;
 export type NewToken = typeof Tokens.$inferInsert;
 
-export const selectUserSchema = createSelectSchema(Users, {email: (schema) => schema.email()});
-export const insertUserSchema = createInsertSchema(Users, {email: (schema) => schema.email()});
 // 3. Strongly-typed TypeScript interfaces from Drizzle
 export type User = typeof Users.$inferSelect;
 export type NewUser = typeof Users.$inferInsert;

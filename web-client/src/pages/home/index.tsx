@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Bolt, Trophy,Star, ChartNoAxesColumn, Gauge, ShieldAlert } from 'lucide-react';
-import { NavigationBar} from '#components/home/navigation-bar'
+import { NavigationBar} from '#components/home/navigationBar'
 import { Hero } from '#components/home/hero';
 import { Footer } from '#components/footer';
 

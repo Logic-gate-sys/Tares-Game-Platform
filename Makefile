@@ -19,7 +19,7 @@ install:
 	cd backend_platform/wss_microservice && go mod download
 
 dev:
-	cd web-client && VITE_BASE_URL=http://localhost:8081 npm run dev
+	cd web-client && npm run dev
 
 down:
 	docker compose --profile dev --profile prod down

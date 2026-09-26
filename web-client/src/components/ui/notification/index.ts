@@ -1,3 +1,3 @@
 export { WarningCard } from './warning';
-export {MessageBox} from './message-box';
+export {MessageBox} from './messageBox';
 export {AlertCard } from './alert';

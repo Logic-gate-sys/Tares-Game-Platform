@@ -3,13 +3,12 @@ import { CreateRoomModal } from '#components/form-modals';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from 'src/store/store';
 import { type Room, type RoomCreateType } from '#types/entities';
-import { useCreateRoomMutation, useDeleteRoomMutation, useUpdateRoomMutation } from '#store/services/room-extend';
+import { useCreateRoomMutation, useDeleteRoomMutation, useUpdateRoomMutation } from '#store/services/roomExtend';
 import { pushToLobby, updateRequests, } from '#store/slices/lobby'
 import { RoomCard } from '#components/game/room';
-import { DeleteModal } from '#components/game/delete-modal';
-import { SettingsModal } from '#components/game/room-setting-modal';
-import { useAuth } from '#store/auth-reducer';
-import { useUI } from '#context/ui-context';
+import { DeleteModal } from '#components/game/deleteModal';
+import { SettingsModal } from '#components/game/roomSettingModal';
+import { useUI } from '#context/uiContext';
 import { Loader } from '#components/ui/loader';
 import { PetitionCard } from '#components/ui/petition';
 
@@ -83,7 +82,7 @@ const petitionData = [
 export function Lobby() {
   const dispatch = useDispatch();
   const { availableRooms, inComingRequests } = useSelector((state: RootState) => state.lobby)
-  const { state } = useAuth();
+  const authState = useSelector((state: RootState) => state.auth);
   const { showNotice } = useUI();
   // RTK QUERY & MUTATION FLAGS
   const [createRoom, { isLoading: isCreating }] = useCreateRoomMutation();
@@ -139,7 +138,8 @@ export function Lobby() {
     e.preventDefault();
     if (selectedRooId) return;
     try {
-      dispatch(pushToLobby({ type: 'in:lobby', payload: { action: "request:room:join", value: { roomId: selectedRooId, playerName: state.user.username, playerLever: state.user.p_level} } }));
+      if (!authState.user) return;
+      dispatch(pushToLobby({ type: 'in:lobby', payload: { action: "request:room:join", value: { roomId: selectedRooId, playerName: authState.user.username ?? '', playerLever: authState.user.p_level ?? '1'} } }));
       showNotice("Success", "Request sent to room owner, please wait while your request is processed...")
     } catch (err) {
       console.error(err)
@@ -247,7 +247,7 @@ export function Lobby() {
             <div className="flex flex-col gap-4">
               {availableRooms.map((arena, idx) => {
                 return <div key={idx} onClick={() => setSelectedRoomId(arena.id)}>
-                  <RoomCard data={arena} playerId={state?.user?.id}
+                  <RoomCard data={arena} playerId={authState.user?.id}
                     onJoin={handleRoomJoinRequest}
                     onOpenDelete={() => setOpenDelete(true)}
                     onOpenSettings={() => setOpenRoomSettings(true)}

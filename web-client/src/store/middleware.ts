@@ -1,5 +1,5 @@
 import { type Middleware } from "@reduxjs/toolkit";
-import { addMessage, addRequest, addRoom, changeSocketStatus, lobbySlice, removeRoom, setAvailableRooms } from "./slices/lobby"
+import { addMessage, addRequest, addRoom,updateRoom, changeSocketStatus, lobbySlice, removeRoom, setAvailableRooms } from "./slices/lobby"
 import { gameSlice } from "./slices/arena";
 import type { ServerMessage } from "#types/messages";
 import type { Room, Request } from "#types/entities";
@@ -30,9 +30,13 @@ export const socketMiddleware = (): Middleware => {
               store.dispatch(setAvailableRooms(res.payload.data as Room[]))
               break;
             }
-            if (res.payload.which === "rooms:new" || res.payload.which==="rooms:update") {
-              console.log("NEW ROOM: ", res.payload.data)
+            if (res.payload.which === "rooms:new") {
               store.dispatch(addRoom(res.payload.data));
+              break;
+            }
+            if (res.payload.which === "rooms:update") {
+              const room = res.payload.data as Room;
+              store.dispatch(updateRoom({updatedRoom: room}));
               break;
             }
 
@@ -42,32 +46,32 @@ export const socketMiddleware = (): Middleware => {
               store.dispatch(addMessage(res.payload.message))
               break;
             }
-            
+
             if (res.payload.which === "rooms:off-line") {
               store.dispatch(removeRoom(res.payload.data));
-              break; 
+              break;
             }
             break;
-  
+
           case "in:game":
             console.log("In game message", res.payload.data);
             break;
-  
+
           default:
             break;
         }
       });
-      
+
       // closing socket
       socket.addEventListener("close", () => { store.dispatch(changeSocketStatus('disconnected')) });
     };
-    
+
     // outbound lobby messages
     if (lobbySlice.actions.pushToLobby.match(action)) {
-      if (socket && socket.readyState === WebSocket.OPEN) {  
+      if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify(action.payload))
       };
-      //  in-game client messages  
+      //  in-game client messages
     } else if (gameSlice.actions.sendWord.match(action)) {
       if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify(action.payload))
