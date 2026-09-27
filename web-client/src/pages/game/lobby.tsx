@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from 'src/store/store';
 import { type Room, type RoomCreateType } from '#types/entities';
 import { useCreateRoomMutation, useDeleteRoomMutation, useUpdateRoomMutation } from '#store/services/roomExtend';
-import { pushToLobby} from '#store/slices/lobby'
+import { pushToLobby } from '#store/slices/lobby'
 import { RoomCard } from '#components/game/room';
 import { DeleteModal } from '#components/game/deleteModal';
 import { SettingsModal } from '#components/game/roomSettingModal';
@@ -90,8 +90,10 @@ export function Lobby() {
       showNotice("Error", "Request to join room failed")
     }
   }
-  
-  const handleEnterOwnRoom = () => {
+
+  const handleEnterOwnRoom = (e: React.MouseEvent | undefined) => {
+    // prevent default page reload behaviour
+    e.preventDefault();
     dispatch(changeStatus("room:in"));
     dispatch(setRoom(selectedRoom));
   };
@@ -202,7 +204,7 @@ export function Lobby() {
                 return <div key={idx} onClick={() => setSelectedRoomId(arena.id)}>
                   <RoomCard data={arena} playerId={authState.user?.id}
                     onJoin={(event) => handleRoomJoinRequest(event, arena.id)}
-                    onEnterOwnRoom={() => handleEnterOwnRoom()}
+                    onEnterOwnRoom={(event) => handleEnterOwnRoom(event)}
                     onOpenDelete={() => setOpenDelete(true)}
                     onOpenSettings={() => setOpenRoomSettings(true)}
                   />
@@ -256,7 +258,7 @@ export function Lobby() {
         {openRoomSettings && <SettingsModal room={selectedRoom} onClose={() => setOpenRoomSettings(false)} onSave={handleUpdateRoom} />}
 
         {/*--------------- PETITION MODAL STACK -----------------*/}
-       
+
 
       </main>
     </div>

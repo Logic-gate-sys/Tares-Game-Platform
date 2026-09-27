@@ -2,7 +2,7 @@
 export type RoomData = {
   id: string;
   name: string;
-  ownerId?: string;
+  ownerId?: number;
   capacity: number; // max players
   icon: string; // icon url return from server
   iconBgClass: string;
@@ -22,11 +22,11 @@ export type Props = {
   onOpenSettings?: () => void;
   onOpenDelete?: () => void;
   onToggleStatus?: () => void;
-  onEnterOwnRoom?: () => void;
+  onEnterOwnRoom?: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 export const RoomCard = ({ data, playerId, onJoin,onEnterOwnRoom, onOpenSettings, onOpenDelete, onToggleStatus }: Props) => {
-  const isOwner = (playerId == data.ownerId) ? true : false;
+  const isOwner = (playerId === data.ownerId) ? true : false;
 
   return (
     <div className="bg-paper-white border-4 border-deep-ink p-6 neubrutalism-shadow-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(18,23,33,1)] transition-all group">
